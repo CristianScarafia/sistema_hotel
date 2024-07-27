@@ -6,4 +6,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('reservas/', include('reservas.urls')),
     path('', home, name='home'),
+    path('__debug__/', include('debug_toolbar.urls')),
 ]

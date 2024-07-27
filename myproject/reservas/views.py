@@ -8,12 +8,10 @@ def generar_planing(request):
     if start_date_str:
         first_day = datetime.strptime(start_date_str, '%Y-%m-%d').date()
     else:
-        first_day = date.today()
+        first_day = date.today().replace(day=1)
 
-    last_day = first_day + timedelta(days=59)  # Ajustar el rango de fechas a 60 días
-
-    days = [first_day + timedelta(days=i) for i in range(60)]  # Generar una lista de 60 días
-    planing = []
+    # Calcular los próximos 60 días
+    days = [first_day + timedelta(days=i) for i in range(60)]
 
     habitaciones = list(Habitacion.objects.all())
 
@@ -27,16 +25,18 @@ def generar_planing(request):
     habitaciones.sort(key=lambda x: tipo_orden.get(x.tipo, 5))
 
     reservas = Reserva.objects.filter(
-        fecha_ingreso__lte=last_day,
-        fecha_egreso__gte=first_day
-    )
+        fecha_ingreso__lte=days[-1],
+        fecha_egreso__gte=days[0]
+    ).select_related('nhabitacion')  # Optimización de la consulta
 
+    planing = []
     for habitacion in habitaciones:
         ocupaciones = []
         nombre_mostrado = False
+        reservas_habitacion = reservas.filter(nhabitacion=habitacion)  # Filtrar por habitación una sola vez
         for day in days:
             ocupacion = None
-            for reserva in reservas.filter(nhabitacion=habitacion.numero):  # Utilizar el campo nhabitacion
+            for reserva in reservas_habitacion:
                 if reserva.fecha_ingreso <= day < reserva.fecha_egreso:
                     if day == reserva.fecha_egreso - timedelta(days=1):
                         ocupacion = {

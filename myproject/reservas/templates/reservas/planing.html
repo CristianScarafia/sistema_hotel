@@ -3,18 +3,18 @@
 {% block title %}Planing de Reservas{% endblock %}
 
 {% block content %}
-    <h1 class="text-2xl font-semibold mb-4 text-left">Planing de Reservas</h1> <!-- Modificación: clase text-left para alinear a la izquierda -->
+    <h1 class="text-2xl font-semibold mb-4">Planing de Reservas</h1>
     <div class="mb-4 p-2 bg-gray-200 rounded" id="date-container" data-date="{{ first_day }}">
         Fecha de inicio: {{ first_day }}
     </div>
-    <div class="overflow-auto">
+    <div class="overflow-auto" style="max-width: 100%;">
         <table class="min-w-full bg-white rounded shadow-md overflow-hidden">
             <thead>
                 <tr class="bg-gray-800 text-white">
                     <th class="py-2 px-4">Número de Habitación</th>
                     <th class="py-2 px-4">Tipo</th>
                     {% for day in days %}
-                        <th class="py-2 px-4 rotate"><div><span>{{ day|date:"d/M" }}</span></div></th> <!-- Modificación: fechas en vertical -->
+                        <th class="py-2 px-4">{{ day|date:"d/M" }}</th>
                     {% endfor %}
                 </tr>
             </thead>
