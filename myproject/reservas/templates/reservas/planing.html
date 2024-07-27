@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Planing de Reservas{% endblock %}
+
+{% block content %}
+    <h1 class="text-2xl font-semibold mb-4 text-left">Planing de Reservas</h1> <!-- Modificación: clase text-left para alinear a la izquierda -->
+    <div class="mb-4 p-2 bg-gray-200 rounded" id="date-container" data-date="{{ first_day }}">
+        Fecha de inicio: {{ first_day }}
+    </div>
+    <div class="overflow-auto">
+        <table class="min-w-full bg-white rounded shadow-md overflow-hidden">
+            <thead>
+                <tr class="bg-gray-800 text-white">
+                    <th class="py-2 px-4">Número de Habitación</th>
+                    <th class="py-2 px-4">Tipo</th>
+                    {% for day in days %}
+                        <th class="py-2 px-4 rotate"><div><span>{{ day|date:"d/M" }}</span></div></th> <!-- Modificación: fechas en vertical -->
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in planing %}
+                    <tr class="habitacion-{{ item.habitacion.tipo }}">
+                        <td class="py-2 px-4 bg-gray-200">{{ item.habitacion.numero }}</td>
+                        <td class="py-2 px-4 bg-gray-200">{{ item.habitacion.tipo }}</td>
+                        {% for ocupacion in item.ocupaciones %}
+                            {% if ocupacion %}
+                                <td class="py-2 px-4 {% if ocupacion.is_last_night %}last-night-cell{% else %}occupied-cell{% endif %}">
+                                    {% if ocupacion.nombre %}
+                                        <span class="nombre-huesped">{{ ocupacion.nombre }}</span>
+                                    {% endif %}
+                                </td>
+                            {% else %}
+                                <td class="py-2 px-4"></td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var dateContainer = document.getElementById('date-container');
+            dateContainer.addEventListener('dblclick', function(event) {
+                var currentDate = this.dataset.date;
+                var input = document.createElement('input');
+                input.type = 'date';
+                input.value = currentDate;
+                input.addEventListener('blur', function() {
+                    var newDate = this.value;
+                    if (newDate) {
+                        window.location.href = updateQueryStringParameter(window.location.href, 'start_date', newDate);
+                    }
+                });
+                this.innerHTML = '';
+                this.appendChild(input);
+                input.focus();
+            });
+        });
+
+        function updateQueryStringParameter(uri, key, value) {
+            var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+            var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+            if (uri.match(re)) {
+                return uri.replace(re, '$1' + key + "=" + value + '$2');
+            } else {
+                return uri + separator + key + "=" + value;
+            }
+        }
+    </script>
+{% endblock %}

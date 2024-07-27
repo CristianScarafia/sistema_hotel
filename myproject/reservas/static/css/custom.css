@@ -1,0 +1,169 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+}
+
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 200px;
+    background-color: #333;
+    padding-top: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 10;  /* Asegurar que el sidebar esté por encima del contenido */
+}
+
+.sidebar img {
+    display: block;
+    margin: 0 auto 30   px auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.sidebar a {
+    display: block;
+    color: #fff;
+    padding: 10px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar a:hover {
+    background-color: #575757;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    margin-left: 200px; /* Asegurar que el contenido principal no se superponga con el sidebar */
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+h1 {
+    font-size: 30px;
+    margin-bottom: 20px;
+    color: #333;
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+input[type="text"], input[type="number"], select, textarea {
+    margin-bottom: 15px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #000; /* Cambiado a borde negro */
+    border-radius: 5px;
+    height: 40px; /* Asegurar que todos los campos tengan la misma altura */
+    box-sizing: border-box;
+}
+
+textarea {
+    resize: none; /* Prevenir que el textarea sea redimensionable */
+    height: 40px; /* Asegurar que el textarea tenga la misma altura */
+    overflow: hidden; /* Esconder las barras de desplazamiento */
+    vertical-align: middle; /* Asegurar que el textarea esté alineado verticalmente con la etiqueta */
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th, td {
+    border: 1px solid #8f8f8f;
+    padding: 8px;
+}
+
+th {
+    background-color: #0d1646;
+    text-align: center;
+}
+
+/* Estilos para las habitaciones según el tipo */
+.habitacion-doble {
+    background-color: #f2d1d1; /* Color pastel para habitación doble */
+}
+
+.habitacion-triple {
+    background-color: #d1e0f2; /* Color pastel para habitación triple */
+}
+
+.habitacion-cuadruple {
+    background-color: #d1f2d4; /* Color pastel para habitación cuádruple */
+}
+
+.habitacion-quintuple {
+    background-color: #f2efd1; /* Color pastel para habitación quíntuple */
+}
+
+.occupied-cell {
+    background-color: #a3d9a5;  /* Color verde claro */
+    color: black;  /* Color del texto */
+    border: 1px solid #ddd;  /* Borde */
+    padding: 8px;  /* Espaciado interno */
+    text-align: center;  /* Alinear el texto al centro */
+    white-space: nowrap;  /* Evitar que el texto se corte */
+    position: relative;  /* Para asegurarse de que el color de la celda ocupe toda el área */
+}
+
+.last-night-cell {
+    background-color: #ff6b6b;  /* Color rojo */
+    color: black;  /* Color del texto */
+    border: 1px solid #ddd;  /* Borde */
+    padding: 8px;  /* Espaciado interno */
+    text-align: center;  /* Alinear el texto al centro */
+    white-space: nowrap;  /* Evitar que el texto se corte */
+    position: relative;  /* Para asegurarse de que el color de la celda ocupe toda el área */
+}
+
+.nombre-huesped {
+    display: inline-block;
+    white-space: nowrap;  /* Evitar que el texto se corte */
+    overflow: hidden;  /* Asegurar que el texto se muestre completamente */
+    text-overflow: ellipsis;  /* Añadir puntos suspensivos si el texto es demasiado largo */
+    max-width: 100%;  /* Asegurar que el texto no exceda el ancho de la celda */
+}
