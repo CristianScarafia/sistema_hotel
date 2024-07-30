@@ -1,23 +1,30 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Listar Habitaciones{% endblock %}
 
 {% block content %}
-    <h1>Listar Habitaciones</h1>
-    <table class="min-w-full bg-white rounded shadow-md overflow-hidden">
-        <thead>
-            <tr class="bg-gray-800 text-white">
-                <th class="py-2 px-4">Número</th>
-                <th class="py-2 px-4">Tipo</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for habitacion in habitaciones %}
+<div class="container mx-auto my-8 p-4 bg-white rounded shadow">
+    <h1 class="text-3xl font-semibold mb-4 text-center">Listado de Habitaciones</h1>
+    <div class="table-container">
+        <table class="general-table min-w-full bg-white rounded shadow-md overflow-hidden">
+            <thead>
+                <tr class="bg-gray-800 text-white">
+                    <th class="py-2 px-4">Número</th>
+                    <th class="py-2 px-4">Tipo</th>
+                    <th class="py-2 px-4">Piso</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for habitacion in habitaciones %}
                 <tr>
                     <td class="py-2 px-4">{{ habitacion.numero }}</td>
                     <td class="py-2 px-4">{{ habitacion.tipo }}</td>
+                    <td class="py-2 px-4">{{ habitacion.piso }}</td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

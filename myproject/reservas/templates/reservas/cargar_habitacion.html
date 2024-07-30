@@ -3,8 +3,9 @@
 {% block title %}Cargar Habitación{% endblock %}
 
 {% block content %}
-    <h1 class="text-2xl font-semibold mb-4">Cargar Habitación</h1>
     <div class="container">
+        <h1 class="text-2xl font-semibold mb-4">Cargar Habitación</h1>
+
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}

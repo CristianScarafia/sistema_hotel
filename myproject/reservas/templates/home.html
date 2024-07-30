@@ -1,8 +1,106 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Home{% endblock %}
 
 {% block content %}
-    <h1 class="text-3xl font-semibold mb-4">Bienvenido al Sistema de Gestión de Reservas</h1>
-    <p class="text-lg">Utiliza el menú de la izquierda para navegar por las diferentes secciones del sistema.</p>
+<div class="container mx-auto my-8 p-4 bg-white rounded shadow">
+    <h1 class="text-2xl font-semibold mb-4 text-center">Bienvenido al Sistema de Gestión de Reservas</h1>
+    <!-- Últimas Reservas y Habitaciones Disponibles -->
+    <div class="independent-box independent-box-left" style="top: 200px; width: 400px; left: 90px">
+        <h2 class="text-xl font-semibold mb-2">Últimas Reservas</h2>
+        <ul>
+            {% for reserva in reservas %}
+                <li>{{ reserva.nombre }} - {{ reserva.fecha_ingreso }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="independent-box independent-box-left" style="top: 350px; width: 400px; left: 90px">
+        <h2 class="text-xl font-semibold mb-2">Habitaciones Disponibles</h2>
+        <ul>
+            {% for habitacion in habitaciones_disponibles %}
+                <li>{{ habitacion.numero }} - {{ habitacion.tipo }} - {{ habitacion.dias_disponibles }} días disponibles</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- Check-In y Check-Out -->
+    <div class="independent-box independent-box-right" style="top: 200px; width: 1065px; left: 500px">
+        <h2 class="text-xl font-semibold mb-2">Check-In/Check-Out del Día</h2>
+        <input type="date" id="selected_date" value="{{ selected_date }}" class="mb-4 p-2 border rounded w-full">
+        <div class="table-container">
+            <h3 class="text-lg font-semibold mb-2">Check-In</h3>
+            <table class="general-table min-w-full bg-white rounded shadow-md overflow-hidden">
+                <thead>
+                    <tr class="bg-gray-800 text-white">
+                        <th class="py-2 px-4">Habitación</th>
+                        <th class="py-2 px-4">Nombre</th>
+                        <th class="py-2 px-4">Apellido</th>
+                        <th class="py-2 px-4">Llegada</th>
+                        <th class="py-2 px-4">Salida</th>
+                        <th class="py-2 px-4">Personas</th>
+                        <th class="py-2 px-4">Resto a Abonar</th>
+                        <th class="py-2 px-4">Observaciones</th>
+                        <th class="py-2 px-4">Check</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reserva in checkin %}
+                    <tr>
+                        <td class="py-2 px-4">{{ reserva.nhabitacion.numero }}</td>
+                        <td class="py-2 px-4">{{ reserva.nombre }}</td>
+                        <td class="py-2 px-4">{{ reserva.apellido }}</td>
+                        <td class="py-2 px-4">{{ reserva.fecha_ingreso }}</td>
+                        <td class="py-2 px-4">{{ reserva.fecha_egreso }}</td>
+                        <td class="py-2 px-4">{{ reserva.personas }}</td>
+                        <td class="py-2 px-4">{{ reserva.resto }}</td>
+                        <td class="py-2 px-4">{{ reserva.observaciones }}</td>
+                        <td class="py-2 px-4"><input type="checkbox"></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="table-container mt-4">
+            <h3 class="text-lg font-semibold mb-2">Check-Out</h3>
+            <table class="general-table min-w-full bg-white rounded shadow-md overflow-hidden">
+                <thead>
+                    <tr class="bg-gray-800 text-white">
+                        <th class="py-2 px-4">Habitación</th>
+                        <th class="py-2 px-4">Nombre</th>
+                        <th class="py-2 px-4">Apellido</th>
+                        <th class="py-2 px-4">Llegada</th>
+                        <th class="py-2 px-4">Salida</th>
+                        <th class="py-2 px-4">Personas</th>
+                        <th class="py-2 px-4">Resto a Abonar</th>
+                        <th class="py-2 px-4">Observaciones</th>
+                        <th class="py-2 px-4">Check</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reserva in checkout %}
+                    <tr>
+                        <td class="py-2 px-4">{{ reserva.nhabitacion.numero }}</td>
+                        <td class="py-2 px-4">{{ reserva.nombre }}</td>
+                        <td class="py-2 px-4">{{ reserva.apellido }}</td>
+                        <td class="py-2 px-4">{{ reserva.fecha_ingreso }}</td>
+                        <td class="py-2 px-4">{{ reserva.fecha_egreso }}</td>
+                        <td class="py-2 px-4">{{ reserva.personas }}</td>
+                        <td class="py-2 px-4">{{ reserva.resto }}</td>
+                        <td class="py-2 px-4">{{ reserva.observaciones }}</td>
+                        <td class="py-2 px-4"><input type="checkbox"></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('selected_date').addEventListener('change', function() {
+        window.location.href = '?selected_date=' + this.value;
+    });
+</script>
 {% endblock %}

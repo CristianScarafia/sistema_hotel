@@ -12,11 +12,11 @@ body, html {
 }
 
 .sidebar {
-    width: 240px; /* Aumentar el ancho para más espacio */
-    background-color: #2c3e50; /* Un color más oscuro para un estilo moderno */
-    padding-top: 30px; /* Más espacio en la parte superior */
-    padding-left: 20px; /* Más espacio en los laterales */
-    padding-right: 20px; /* Más espacio en los laterales */
+    width: 240px;
+    background-color: #2c3e50;
+    padding-top: 30px;
+    padding-left: 20px;
+    padding-right: 20px;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
@@ -25,87 +25,102 @@ body, html {
     left: 0;
     bottom: 0;
     z-index: 10;
-    transition: all 0.3s ease; /* Suave transición para el hover */
+    transition: all 0.3s ease;
 }
 
-.sidebar:hover {
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3); /* Efecto hover */
+.sidebar-hidden {
+    transform: translateX(-240px);
 }
 
 .sidebar img {
     display: block;
     margin: 0 auto 20px auto;
-    max-width: 80%; /* Ajustar tamaño del logo */
+    max-width: 80%;
     height: auto;
-    padding: 10px; /* Añadir espacio alrededor del logo */
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Sombra suave para el logo */
+    padding: 10px;
+    border-radius: 10px;
 }
 
 .sidebar a {
     display: block;
-    color: #ecf0f1; /* Color claro para los enlaces */
-    padding: 15px 20px; /* Más espacio interno */
-    margin: 10px 0; /* Espacio entre los enlaces */
+    color: #ecf0f1;
+    padding: 15px 20px;
+    margin: 10px 0;
     text-decoration: none;
-    background-color: #34495e; /* Fondo de los enlaces */
-    border-radius: 5px; /* Bordes redondeados */
-    transition: background-color 0.3s ease; /* Transición suave para el hover */
+    background-color: #34495e;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
 }
 
 .sidebar a:hover {
-    background-color: #1abc9c; /* Color de fondo en hover */
-    color: #fff; /* Color de texto en hover */
+    background-color: #1abc9c;
+    color: #fff;
 }
 
 .main-content {
     flex-grow: 1;
     padding: 20px;
-    margin-left: 240px; /* Ajustar margen para el contenido principal */
+    margin-left: 240px;
     background-color: #ecf0f1;
-    z-index: 1;
+    transition: margin-left 0.3s ease;
+    overflow: hidden;
+}
+
+.sidebar-hidden + .main-content {
+    margin-left: 0;
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 90%;
     margin: 50px auto;
     padding: 20px;
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-direction: column;
 }
 
-h1 {
-    font-size: 60px;
-    margin-bottom: 60px;
+h1, h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
     color: #333;
-    text-align: left;
+    text-align: center;
+    font-weight: bold;
+    font-family: 'Roboto', sans-serif;
 }
 
 form {
     display: flex;
     flex-direction: column;
+    width: 100%;
+    align-items: flex-start;
 }
 
 label {
     margin-bottom: 5px;
     font-weight: bold;
     color: #555;
+    align-self: flex-start;
 }
 
 input[type="text"], input[type="number"], select, textarea {
     margin-bottom: 15px;
     padding: 10px;
     font-size: 16px;
-    border: 1px solid #000; /* Cambiado a borde negro */
+    border: 1px solid #000;
     border-radius: 5px;
-    height: 40px; /* Asegurar que todos los campos tengan la misma altura */
+    height: 40px;
     box-sizing: border-box;
+    width: 100%;
 }
 
 textarea {
-    resize: none; /* Prevenir que el textarea sea redimensionable */
-    height: 40px; /* Asegurar que el textarea tenga la misma altura */
-    overflow: hidden; /* Esconder las barras de desplazamiento */
+    resize: none;
+    height: 40px;
+    overflow: hidden;
 }
 
 button {
@@ -123,78 +138,143 @@ button:hover {
     background-color: #0056b3;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
-    position: relative;
+#selected-date {
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
-th, td {
+#selected-date:focus {
+    direction: ltr;
+    text-align: left;
+}
+
+.table-container {
+    overflow: auto;
+    max-height: 80vh;
+    margin-bottom: 20px;
+}
+
+.general-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 800px;
+}
+
+.general-table th, .general-table td {
     border: 1px solid #8f8f8f;
     padding: 8px;
     white-space: nowrap;
+    color: black;
 }
 
-th {
+.general-table th {
+    background-color: #0d1646;
+    text-align: center;
+    color: white;
+}
+
+.planning-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 1200px;
+}
+
+.planning-table th, .planning-table td {
+    border: 1px solid #8f8f8f;
+    padding: 8px;
+    white-space: nowrap;
+    color: black;
+}
+
+.planning-table th {
     background-color: #0d1646;
     text-align: center;
     position: sticky;
-    top: 0; /* Fijar la primera fila */
+    top: 0;
     z-index: 2;
+    color: white;
 }
 
-td:first-child, th:first-child, td:nth-child(2), th:nth-child(2) {
+.planning-table td:first-child, .planning-table th:first-child {
     position: sticky;
     left: 0;
-    z-index: 1;
+    z-index: 3;
+    background: white;
+    color: black;
 }
 
-td:nth-child(2), th:nth-child(2) {
-    z-index: 1;
+.planning-table td:nth-child(2), .planning-table th:nth-child(2) {
+    position: sticky;
+    left: 178px;
+    z-index: 3;
+    background: white;
+    color: black;
 }
 
 .habitacion-doble {
-    background-color: #f2d1d1; /* Color pastel para habitación doble */
+    background-color: #f2d1d1;
 }
 
 .habitacion-triple {
-    background-color: #d1e0f2; /* Color pastel para habitación triple */
+    background-color: #d1e0f2;
 }
 
 .habitacion-cuadruple {
-    background-color: #d1f2d4; /* Color pastel para habitación cuádruple */
+    background-color: #d1f2d4;
 }
 
 .habitacion-quintuple {
-    background-color: #f2efd1; /* Color pastel para habitación quíntuple */
+    background-color: #f2efd1;
 }
 
 .occupied-cell {
-    background-color: #a3d9a5;  /* Color verde claro */
-    color: black;  /* Color del texto */
-    border: 1px solid #ddd;  /* Borde */
-    padding: 8px;  /* Espaciado interno */
-    text-align: center;  /* Alinear el texto al centro */
-    white-space: nowrap;  /* Evitar que el texto se corte */
-    position: relative;  /* Para asegurarse de que el color de la celda ocupe toda el área */
-    z-index: 1;  /* Asegurar que la celda ocupada esté debajo del sidebar */
+    background-color: #a3d9a5;
+    color: black;
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    white-space: nowrap;
+    position: relative;
+    z-index: 1;
 }
 
 .last-night-cell {
-    background-color: #ff6b6b;  /* Color rojo */
-    color: black;  /* Color del texto */
-    border: 1px solid #ddd;  /* Borde */
-    padding: 8px;  /* Espaciado interno */
-    text-align: center;  /* Alinear el texto al centro */
-    white-space: nowrap;  /* Evitar que el texto se corte */
-    position: relative;  /* Para asegurarse de que el color de la celda ocupe toda el área */
-    z-index: 1;  /* Asegurar que la última noche esté debajo del sidebar */
+    background-color: #ff6b6b;
+    color: black;
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    white-space: nowrap;
+    position: relative;
+    z-index: 1;
 }
 
 .nombre-huesped {
     display: inline-block;
-    white-space: nowrap;  /* Evitar que el texto se corte */
-    overflow: hidden;  /* Asegurar que el texto se muestre completamente */
-    text-overflow: ellipsis;  /* Añadir puntos suspensivos si el texto es demasiado largo */
-    max-width: 100%;  /* Asegurar que el texto no exceda el ancho de la celda */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+
+
+.independent-box {
+    position: absolute;
+    width: 45%;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin-left: 250px; /* Ensure it doesn't overlap with the sidebar */
+}
+
+.independent-box-left {
+    left: 250px; /* Ensure it starts after the sidebar */
+}
+
+.independent-box-right {
+    right: 50px; /* Position it on the right side */
 }
