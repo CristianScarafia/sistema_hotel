@@ -1,5 +1,4 @@
 from django.db import models
-
 class Habitacion(models.Model):
     numero = models.CharField(max_length=10)
     tipo = models.CharField(max_length=50, default='doble')
@@ -9,10 +8,10 @@ class Habitacion(models.Model):
         return self.numero
 
 class Reserva(models.Model):
-    encargado = models.CharField(max_length=100, null=False, default="Seleccionar")
+    encargado = models.CharField(max_length=100, null=False)
     nhabitacion = models.ForeignKey(Habitacion, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100, null=False)
-    apellido = models.CharField(max_length=100, default='Apellido', null=False)
+    apellido = models.CharField(max_length=100, null=False)
     personas = models.IntegerField(null=False, default=1)
     fecha_ingreso = models.DateField(null=False)
     fecha_egreso = models.DateField(null=False)
@@ -25,7 +24,7 @@ class Reserva(models.Model):
     telefono = models.CharField(max_length=20, null=False, default=1)
     celiacos = models.BooleanField(default=False, null=False)
     observaciones = models.TextField(blank=True, null=False)
-    origen = models.CharField(max_length=100, null=False, default="Seleccionar")
+    origen = models.CharField(max_length=100, null=False)
 
     def __str__(self):
         return f'{self.nombre} {self.apellido} - Habitación {self.nhabitacion.numero}'

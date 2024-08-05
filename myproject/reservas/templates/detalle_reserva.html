@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <title>Detalle de Reserva</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+    <style>
+        .popup-content {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .popup-content h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .popup-content p {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        .popup-content p strong {
+            font-size: 20px;
+        }
+    </style>
+<body>
+    <div class="popup-content">
+        <p><strong>Encargado:</strong> {{ reserva.encargado }}</p>
+        <p><strong>Habitación:</strong> {{ reserva.nhabitacion.numero }}</p>
+        <p><strong>Nombre:</strong> {{ reserva.nombre }}</p>
+        <p><strong>Apellido:</strong> {{ reserva.apellido }}</p>
+        <p><strong>Personas:</strong> {{ reserva.personas }}</p>
+        <p><strong>Fecha Ingreso:</strong> {{ reserva.fecha_ingreso }}</p>
+        <p><strong>Fecha Egreso:</strong> {{ reserva.fecha_egreso }}</p>
+        <p><strong>Noches:</strong> {{ reserva.noches }}</p>
+        <p><strong>Precio por Noche:</strong> {{ reserva.precio_por_noche_formatted }}</p>
+        <p><strong>Monto Total:</strong> {{ reserva.monto_total_formatted }}</p>
+        <p><strong>Seña:</strong> {{ reserva.senia_formatted }}</p>
+        <p><strong>Resto:</strong> {{ reserva.resto_formatted }}</p>
+        <p><strong>Cantidad Habitaciones:</strong> {{ reserva.cantidad_habitaciones }}</p>
+        <p><strong>Teléfono:</strong> {{ reserva.telefono }}</p>
+        <p><strong>Celíacos:</strong> {{ reserva.celiacos|yesno:"Sí,No" }}</p>
+        <p><strong>Observaciones:</strong> {{ reserva.observaciones }}</p>
+        <p><strong>Origen:</strong> {{ reserva.origen }}</p>
+    </div>
+</body>
+</html>

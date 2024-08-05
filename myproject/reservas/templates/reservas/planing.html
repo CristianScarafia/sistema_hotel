@@ -4,9 +4,11 @@
 {% block title %}Planning de Reservas{% endblock %}
 
 {% block content %}
+<div class="container mx-auto my-8 p-4 bg-white rounded shadow">
     <h1 class="text-2xl font-semibold mb-4">Planning de Reservas</h1>
     <div class="mb-4 p-2 bg-gray-200 rounded" id="date-container" data-date="{{ first_day }}">
-        Fecha de inicio: {{ first_day }}
+        <span id="date-display">Fecha de inicio: {{ first_day|date:"M. d, Y" }}</span>
+        <input type="date" id="date-input" value="{{ first_day }}" class="hidden" />
     </div>
     <div class="table-container">
         <table class="planning-table">
@@ -25,19 +27,79 @@
                         <td>{{ item.habitacion.numero }}</td>
                         <td>{{ item.habitacion.tipo }}</td>
                         {% for ocupacion in item.ocupaciones %}
-                            {% if ocupacion %}
-                                <td class="{% if ocupacion.is_last_night %}last-night-cell{% else %}occupied-cell{% endif %}">
-                                    {% if ocupacion.nombre %}
-                                        <span class="nombre-huesped">{{ ocupacion.nombre }}</span>
-                                    {% endif %}
-                                </td>
-                            {% else %}
-                                <td></td>
-                            {% endif %}
+                            <td class="{% if ocupacion.is_last_night %}last-night-cell{% elif ocupacion.is_occupied %}occupied-cell{% endif %}">
+                                {% if ocupacion.is_occupied and ocupacion.nombre %}
+                                    <span class="nombre-huesped">{{ ocupacion.nombre }}</span>
+                                {% endif %}
+                            </td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateContainer = document.getElementById('date-container');
+    const dateDisplay = document.getElementById('date-display');
+    const dateInput = document.getElementById('date-input');
+
+    dateContainer.addEventListener('dblclick', function() {
+        dateDisplay.classList.add('hidden');
+        dateInput.classList.remove('hidden');
+        dateInput.focus();
+    });
+
+    dateInput.addEventListener('blur', function() {
+        updateDate();
+    });
+
+    dateInput.addEventListener('change', function() {
+        updateDate();
+    });
+
+    function updateDate() {
+        const newDate = dateInput.value;
+        const formattedDate = new Date(newDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }).replace(/ /g, '. ');
+        dateDisplay.textContent = 'Fecha de inicio: ' + formattedDate;
+        dateDisplay.classList.remove('hidden');
+        dateInput.classList.add('hidden');
+        dateContainer.dataset.date = newDate;
+
+        console.log('Enviando nueva fecha al servidor:', newDate);
+
+        // Enviar la nueva fecha al servidor
+        fetch('/update_fecha_inicio/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: new URLSearchParams({
+                'new_date': newDate
+            })
+        }).then(response => response.json())
+          .then(data => {
+              console.log('Respuesta del servidor:', data);
+              if (data.status === 'success') {
+                  console.log('Fecha actualizada exitosamente');
+                  // Recarga la página para actualizar el planning
+                  window.location.href = '/planning?start_date=' + newDate;
+              } else {
+                  console.log('Error al actualizar la fecha');
+              }
+          }).catch(error => {
+              console.error('Error en la petición:', error);
+          });
+    }
+});
+</script>
 {% endblock %}

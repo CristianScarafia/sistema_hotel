@@ -4,6 +4,7 @@ body, html {
     font-family: 'Roboto', sans-serif;
 }
 
+/* Estructura principal */
 .wrapper {
     display: flex;
     min-height: 100vh;
@@ -11,6 +12,7 @@ body, html {
     z-index: 1;
 }
 
+/* Estilo del sidebar */
 .sidebar {
     width: 240px;
     background-color: #2c3e50;
@@ -57,6 +59,7 @@ body, html {
     color: #fff;
 }
 
+/* Contenido principal */
 .main-content {
     flex-grow: 1;
     padding: 20px;
@@ -70,6 +73,7 @@ body, html {
     margin-left: 0;
 }
 
+/* Estilo de contenedores generales */
 .container {
     max-width: 90%;
     margin: 50px auto;
@@ -79,12 +83,47 @@ body, html {
     border-radius: 10px;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     flex-direction: column;
 }
 
+/* Estilos para los contenedores de Flexbox */
+.flex-container {
+    display: flex;
+    gap: 20px;
+}
+
+/* Estilos para el mapa de habitaciones */
+.habitaciones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+}
+
+.habitacion {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.habitacion.ocupada {
+    background-color: red;
+}
+
+.habitacion.desocupada {
+    background-color: green;
+}
+
+/* Estilo de los títulos */
 h1, h2 {
-    font-size: 24px;
+    font-size: 28px;
     margin-bottom: 20px;
     color: #333;
     text-align: center;
@@ -92,6 +131,7 @@ h1, h2 {
     font-family: 'Roboto', sans-serif;
 }
 
+/* Estilo de los formularios */
 form {
     display: flex;
     flex-direction: column;
@@ -122,7 +162,45 @@ textarea {
     height: 40px;
     overflow: hidden;
 }
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
 
+.btn-blue {
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+}
+
+.btn-blue:hover {
+    background-color: #0056b3;
+}
+
+.btn-red {
+    background-color: #f44336;
+    color: #fff;
+    text-decoration: none;
+}
+
+.btn-red:hover {
+    background-color: #d32f2f;
+}
+
+.btn-gray {
+    background-color: #6c757d;
+    color: #fff;
+    text-decoration: none;
+}
+
+.btn-gray:hover {
+    background-color: #5a6268;
+}
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -138,11 +216,65 @@ button:hover {
     background-color: #0056b3;
 }
 
-#selected-date {
-    margin-top: 10px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+/* pop up */
+/* Estilos para el pop-up */
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 600px;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    z-index: 1001;
+    padding: 20px;
+    display: none; /* Inicialmente oculto */
+}
+
+.popup .close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Estilo para el título del pop-up */
+.popup h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* Estilo para el fondo oscuro */
+.popup-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none; /* Inicialmente oculto */
+}
+
+/* Mostrar el pop-up cuando el checkbox está marcado */
+#popup-toggle:checked ~ .popup-background {
+    display: block;
+}
+
+#popup-toggle:checked ~ .popup {
+    display: block;
 }
 
 #selected-date:focus {
@@ -150,35 +282,63 @@ button:hover {
     text-align: left;
 }
 
+/* Estilo del contenedor de tablas */
 .table-container {
     overflow: auto;
-    max-height: 80vh;
+    max-width: 100%;
+    max-height: 70vh;
     margin-bottom: 20px;
 }
 
+/* Estilo de las tablas generales */
 .general-table {
     border-collapse: collapse;
     width: 100%;
     min-width: 800px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
 .general-table th, .general-table td {
-    border: 1px solid #8f8f8f;
-    padding: 8px;
+    border: 1px solid #ddd;  /* Añadido borde para separación de columnas */
+    padding: 12px 15px;
     white-space: nowrap;
-    color: black;
+    color: #333;
+    font-size: 14px;
+    text-align: left;
 }
 
 .general-table th {
     background-color: #0d1646;
     text-align: center;
     color: white;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-.grid > div {
-    padding: 20px;
+.general-table tr:nth-child(even) {
+    background-color: #f9f9f9;
 }
 
+.general-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.general-table td:first-child, .general-table th:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.general-table td:last-child, .general-table th:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+/* Estilo de la tabla de planning */
 .planning-table {
     border-collapse: collapse;
     width: 100%;
@@ -192,13 +352,46 @@ button:hover {
     color: black;
 }
 
+.planning-table td {
+    max-width: 100px; /* Ajusta esto según sea necesario */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .planning-table th {
     background-color: #0d1646;
     text-align: center;
     position: sticky;
+    left: 178px; /* Ajusta el ancho aquí si es necesario */
     top: 0;
-    z-index: 2;
+    z-index: 3;
     color: white;
+}
+
+.planning-table tr th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 4; /* Mayor que el z-index de las celdas */
+    background: #0d1646;
+    color: white;
+}
+
+.planning-table tr th:nth-child(2) {
+    position: sticky;
+    left: 178px; /* Ajusta el ancho aquí si es necesario */
+    z-index: 4; /* Mayor que el z-index de las celdas */
+    background: #0d1646;
+    color: white;
+}
+
+.planning-table tr th {
+    position: sticky;
+    top: 0;
+    left: 178px;
+    background: #0d1646;
+    color: white;
+    z-index: 2;
 }
 
 .planning-table td:first-child, .planning-table th:first-child {
@@ -207,6 +400,7 @@ button:hover {
     z-index: 3;
     background: white;
     color: black;
+    box-shadow: 1px 0 0 #ddd, 2px 0 0 #ddd;
 }
 
 .planning-table td:nth-child(2), .planning-table th:nth-child(2) {
@@ -215,8 +409,10 @@ button:hover {
     z-index: 3;
     background: white;
     color: black;
+    box-shadow: 1px 0 0 #ddd, 2px 0 0 #ddd;
 }
 
+/* Estilos para las habitaciones según el tipo */
 .habitacion-doble {
     background-color: #f2d1d1;
 }
@@ -233,6 +429,7 @@ button:hover {
     background-color: #f2efd1;
 }
 
+/* Estilo de las celdas ocupadas y última noche */
 .occupied-cell {
     background-color: #a3d9a5;
     color: black;
@@ -255,6 +452,7 @@ button:hover {
     z-index: 1;
 }
 
+/* Estilo del nombre del huésped */
 .nombre-huesped {
     display: inline-block;
     white-space: nowrap;
@@ -263,6 +461,7 @@ button:hover {
     max-width: 100%;
 }
 
+/* Estilo del botón de toggle del sidebar */
 #toggle-sidebar {
     position: fixed;
     top: 10px;
@@ -279,4 +478,46 @@ button:hover {
 
 #toggle-sidebar:hover {
     background-color: #0056b3;
+}
+
+/* Estilo de los cuadros independientes */
+.independent-box {
+    position: absolute;
+    width: 45%;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin-left: 250px; /* Ensure it doesn't overlap with the sidebar */
+}
+
+.independent-box-left {
+    left: 250px; /* Ensure it starts after the sidebar */
+}
+
+.independent-box-right {
+    right: 50px; /* Position it on the right side */
+}
+
+/* Estilos para la cotización del dólar */
+.dollar-box {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    width: auto;
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.dollar-rate {
+    font-size: 18px;
+    font-weight: normal;
+}
+
+.dollar-price {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ff5733;
 }
