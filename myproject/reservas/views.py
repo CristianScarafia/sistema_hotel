@@ -17,8 +17,19 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
-def admin_check(user):
-    return user.is_superuser
+def custom_login(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('home')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'login.html', {'form': form})
 
 def get_dollar_rate():
     url = 'https://www.bloomberg.com/quote/USDARS:CUR'
@@ -32,8 +43,6 @@ def get_dollar_rate():
             return quote.text.strip()
     return 'N/A'
 
-@login_required
-@user_passes_test(admin_check)
 def update_checkins_checkouts(request):
     selected_date_str = request.GET.get('selected_date')
     selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date() if selected_date_str else date.today()
@@ -72,8 +81,7 @@ def update_checkins_checkouts(request):
         'checkouts': checkouts_data
     })
     
-@login_required
-@user_passes_test(admin_check)
+
 def generar_planing(request):
     start_date_str = request.GET.get('start_date')
     
@@ -166,14 +174,33 @@ def update_fecha_inicio(request):
             return JsonResponse({'status': 'error', 'message': 'No se recibió una nueva fecha.'})
     return JsonResponse({'status': 'error', 'message': 'Método no permitido.'})
 
-@login_required
-@user_passes_test(admin_check)    
+ 
 def listar_habitaciones(request):
     habitaciones = Habitacion.objects.all()
     return render(request, 'reservas/listar_habitaciones.html', {'habitaciones': habitaciones})
 
-@login_required
-@user_passes_test(admin_check)
+def editar_habitacion(request, habitacion_id):
+    habitacion = get_object_or_404(Habitacion, id=habitacion_id)
+    
+    if request.method == 'POST':
+        form = HabitacionForm(request.POST, instance=habitacion)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Habitación actualizada con éxito.')
+            return redirect('listar_habitaciones')  # Redirige a la lista de habitaciones después de guardar
+    else:
+        form = HabitacionForm(instance=habitacion)
+    
+    return render(request, 'reservas/editar_habitacion.html', {'form': form, 'habitacion': habitacion})
+
+def eliminar_habitacion(request, habitacion_id):
+    habitacion = get_object_or_404(Habitacion, id=habitacion_id)
+    if request.method == 'POST':
+        habitacion.delete()
+        messages.success(request, 'Habitación eliminada con éxito.')
+        return redirect('listar_habitaciones')
+    return render(request, 'reservas/eliminar_habitacion.html', {'habitacion': habitacion})
+
 def cargar_habitacion(request):
     if request.method == 'POST':
         form = HabitacionForm(request.POST)
@@ -184,8 +211,7 @@ def cargar_habitacion(request):
         form = HabitacionForm()
     return render(request, 'reservas/cargar_habitacion.html', {'form': form})
 
-@login_required
-@user_passes_test(admin_check)
+
 def cargar_reserva(request):
     if request.method == 'POST':
         form = ReservaForm(request.POST)
@@ -234,8 +260,8 @@ def detalles_habitacion(request, numero_habitacion):
     }
 
     return JsonResponse(detalles)
-@login_required
-@user_passes_test(admin_check)
+
+
 def home(request):
     selected_date = request.GET.get('selected_date', date.today().strftime('%Y-%m-%d'))
 
@@ -321,8 +347,6 @@ def eliminar_reserva(request, reserva_id):
         return redirect('listar_reservas')
     return render(request, 'reservas/listar_reservas.html')
 
-@login_required
-@user_passes_test(admin_check)
 def listar_reservas(request):
     reservas = Reserva.objects.all()
     for reserva in reservas:
@@ -335,8 +359,6 @@ def listar_reservas(request):
         'reservas': reservas
     })
 
-@login_required
-@user_passes_test(admin_check)
 def editar_reserva(request, reserva_id):
     reserva = Reserva.objects.get(id=reserva_id)
     if request.method == 'POST':
@@ -349,16 +371,3 @@ def editar_reserva(request, reserva_id):
     return render(request, 'reservas/editar_reserva.html', {'form': form})
 
 
-def register(request):
-    if request.user.is_authenticated:  # Si el usuario ya está autenticado, redirigir a la página principal
-        return redirect('home')
-
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('home')  # Redirige a la página de inicio después del registro
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'registration/register.html', {'form': form})
