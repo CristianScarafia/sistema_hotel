@@ -82,13 +82,16 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hotel_bermudas',
-        'HOST': 'localhost',
+        'NAME': 'postgres',
         'USER': 'postgres',
-        'PASSWORD': '1234'
+        'PASSWORD': '1234',
+        'HOST': 'db.soydgimrcwwgycqgeyls.supabase.co',  # O la IP del servidor PostgreSQL
+        'PORT': '5432',  # Puerto por defecto de PostgreSQL
+        'OPTIONS': {
+            'client_encoding': 'UTF8',  # Asegura que la conexión se haga en UTF-8
+        },
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
