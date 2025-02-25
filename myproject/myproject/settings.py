@@ -83,9 +83,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
-        'USER': 'postgres',
+        'USER': 'postgres.soydgimrcwwgycqgeyls',
         'PASSWORD': '1234',
-        'HOST': 'db.soydgimrcwwgycqgeyls.supabase.co',  # O la IP del servidor PostgreSQL
+        'HOST': 'aws-0-us-west-1.pooler.supabase.com',  # O la IP del servidor PostgreSQL
         'PORT': '5432',  # Puerto por defecto de PostgreSQL
         'OPTIONS': {
             'client_encoding': 'UTF8',  # Asegura que la conexión se haga en UTF-8
