@@ -3,7 +3,8 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from reservas.views import home
 from reservas import views
-
+from django.conf.urls.static import static
+from django.conf import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('reservas/', include('reservas.urls')),
@@ -19,4 +20,4 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),  # Vista de logout
     path('editar_habitacion/<int:habitacion_id>/', views.editar_habitacion, name='editar_habitacion'),
     path('eliminar_habitacion/<int:habitacion_id>/', views.eliminar_habitacion, name='eliminar_habitacion'),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

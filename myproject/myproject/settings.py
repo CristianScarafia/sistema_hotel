@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'reservas',
     'debug_toolbar',
+    'whitenoise.runserver_nostatic', 
+
 ]
 
 MIDDLEWARE = [

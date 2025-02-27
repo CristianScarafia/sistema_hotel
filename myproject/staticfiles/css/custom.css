@@ -482,28 +482,19 @@ button:hover {
 
 /* Estilo de los cuadros independientes */
 .independent-box {
-    position: absolute;
-    width: 45%;
+    width: 100%;
     padding: 20px;
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
-    margin-left: 250px; /* Ensure it doesn't overlap with the sidebar */
-}
-
-.independent-box-left {
-    left: 250px; /* Ensure it starts after the sidebar */
-}
-
-.independent-box-right {
-    right: 50px; /* Position it on the right side */
+    margin-bottom: 20px;
 }
 
 /* Estilos para la cotización del dólar */
 .dollar-box {
     position: absolute;
-    top: 50px;
-    left: 50px;
+    top: 810px;
+    left: 1200px;
     width: auto;
     background-color: #f5f5f5;
     padding: 20px;
