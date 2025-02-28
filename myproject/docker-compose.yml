@@ -1,4 +1,3 @@
-version: '3.9'
 
 services:
   django:
@@ -7,6 +6,7 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+      - ./staticfiles:/usr/app/staticfiles  # Asegura que los archivos estáticos estén disponibles
     depends_on:
       - postgres
     environment:

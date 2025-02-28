@@ -1,6 +1,8 @@
 from .base import *
 import os
 from dotenv import load_dotenv
+from ..logging import *
+
 load_dotenv(Path.joinpath(BASE_DIR, '.env'))
 
 # SECURITY WARNING: keep the secret key used in production secret!
