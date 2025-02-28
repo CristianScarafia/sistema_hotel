@@ -10,6 +10,8 @@ RUN apk update \
 
 COPY ./requirements.txt ./
 
+COPY myproject /usr/app
+
 RUN pip install -r requirements.txt
 
 COPY . .
