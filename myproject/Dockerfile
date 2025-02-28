@@ -16,7 +16,7 @@ COPY . .
 
 
 
-CMD ["bash", "./entrypoint.sh"]
+CMD ["bash", "./build.sh"]
 
 
 
