@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 echo 'Running collectstatic...'
 python manage.py collectstatic --no-input --settings=myproject.settings.production
