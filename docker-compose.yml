@@ -1,0 +1,28 @@
+
+services:
+  django:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./staticfiles:/usr/app/staticfiles  # Asegura que los archivos estáticos estén disponibles
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_NAME=postgres
+      - DATABASE_USER=postgres.soydgimrcwwgycqgeyls
+      - DATABASE_PASSWORD=1234
+      - DATABASE_HOST=aws-0-us-west-1.pooler.supabase.com
+      - DATABASE_PORT=5432
+
+  postgres:
+    image: postgres:14.3-alpine3.16
+    ports:
+      - "5431:5432"
+    volumes:
+      - ./database:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres.soydgimrcwwgycqgeyls
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=postgres

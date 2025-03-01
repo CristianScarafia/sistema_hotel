@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Listar Habitaciones{% endblock %}
+
+{% block content %}
+<div class="container mx-auto my-8 p-4 bg-white rounded shadow">
+    <h1 class="text-2xl font-semibold mb-4 text-center">Listar Habitaciones</h1>
+    <div class="table-container">
+        <table class="general-table min-w-full bg-white rounded shadow-md overflow-hidden">
+            <thead>
+                <tr class="bg-gray-800 text-white">
+                    <th class="py-2 px-4">Número</th>
+                    <th class="py-2 px-4">Tipo</th>
+                    <th class="py-2 px-4">Piso</th>
+                    <th class="py-2 px-2 text-center" style="width: 80px;">Editar</th>
+                    <th class="py-2 px-2 text-center" style="width: 80px;">Eliminar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for habitacion in habitaciones %}
+                <tr>
+                    <td class="py-2 px-4">{{ habitacion.numero }}</td>
+                    <td class="py-2 px-4">{{ habitacion.tipo }}</td>
+                    <td class="py-2 px-4">{{ habitacion.piso }}</td>
+                    <td class="py-2 px-2 text-center">
+                        <a href="{% url 'editar_habitacion' habitacion.id %}" class="btn btn-blue">Editar</a>
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                        <button onclick="confirmDelete('{{ habitacion.id }}')" class="btn btn-red">Eliminar</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pop-up de confirmación -->
+<div id="confirm-popup" class="popup">
+    <label class="close" onclick="closePopup()">&times;</label>
+    <h2>Confirmar Eliminación</h2>
+    <p>¿Estás seguro de que deseas eliminar esta habitación?</p>
+    <form id="delete-form" method="post" action="">
+        {% csrf_token %}
+        <div class="popup-buttons">
+            <button type="submit" class="btn btn-red">Eliminar</button>
+            <button type="button" class="btn btn-gray" onclick="closePopup()">Cancelar</button>
+        </div>
+    </form>
+</div>
+<label for="confirm-popup" class="popup-background" id="popup-background"></label>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmDelete(habitacionId) {
+        document.getElementById('delete-form').action = `/eliminar_habitacion/${habitacionId}/`;
+        document.getElementById('confirm-popup').style.display = 'block';
+        document.getElementById('popup-background').style.display = 'block';
+    }
+
+    function closePopup() {
+        document.getElementById('confirm-popup').style.display = 'none';
+        document.getElementById('popup-background').style.display = 'none';
+    }
+</script>
+{% endblock %}

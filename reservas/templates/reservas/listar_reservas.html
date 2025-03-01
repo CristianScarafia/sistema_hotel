@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Listar Reservas{% endblock %}
+
+{% block content %}
+<div class="container mx-auto my-8 p-4 bg-white rounded shadow">
+    <h1 class="text-2xl font-semibold mb-4 text-center">Listar Reservas</h1>
+    <div class="table-container">
+        <table class="general-table min-w-full bg-white rounded shadow-md overflow-hidden">
+            <thead>
+                <tr class="bg-gray-800 text-white">
+                    <th class="py-2 px-4">Encargado</th>
+                    <th class="py-2 px-4">Habitación</th>
+                    <th class="py-2 px-4">Nombre</th>
+                    <th class="py-2 px-4">Apellido</th>
+                    <th class="py-2 px-4">Personas</th>
+                    <th class="py-2 px-4">Fecha Ingreso</th>
+                    <th class="py-2 px-4">Fecha Egreso</th>
+                    <th class="py-2 px-4">Noches</th>
+                    <th class="py-2 px-4">Precio por Noche</th>
+                    <th class="py-2 px-4">Monto Total</th>
+                    <th class="py-2 px-4">Seña</th>
+                    <th class="py-2 px-4">Resto</th>
+                    <th class="py-2 px-4">Cantidad Habitaciones</th>
+                    <th class="py-2 px-4">Teléfono</th>
+                    <th class="py-2 px-4">Celíacos</th>
+                    <th class="py-2 px-4">Observaciones</th>
+                    <th class="py-2 px-4">Origen</th>
+                    <th class="py-2 px-4">Editar</th>
+                    <th class="py-2 px-4">Eliminar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reserva in reservas %}
+                <tr>
+                    <td class="py-2 px-4">{{ reserva.encargado }}</td>
+                    <td class="py-2 px-4">{{ reserva.nhabitacion.numero }}</td>
+                    <td class="py-2 px-4">{{ reserva.nombre }}</td>
+                    <td class="py-2 px-4">{{ reserva.apellido }}</td>
+                    <td class="py-2 px-4">{{ reserva.personas }}</td>
+                    <td class="py-2 px-4">{{ reserva.fecha_ingreso }}</td>
+                    <td class="py-2 px-4">{{ reserva.fecha_egreso }}</td>
+                    <td class="py-2 px-4">{{ reserva.noches }}</td>
+                    <td class="py-2 px-4">{{ reserva.precio_por_noche_formatted }}</td>
+                    <td class="py-2 px-4">{{ reserva.monto_total_formatted }}</td>
+                    <td class="py-2 px-4">{{ reserva.senia_formatted }}</td>
+                    <td class="py-2 px-4">{{ reserva.resto_formatted }}</td>
+                    <td class="py-2 px-4">{{ reserva.cantidad_habitaciones }}</td>
+                    <td class="py-2 px-4">{{ reserva.telefono }}</td>
+                    <td class="py-2 px-4">{{ reserva.celiacos|yesno:"Sí,No" }}</td>
+                    <td class="py-2 px-4">{{ reserva.observaciones }}</td>
+                    <td class="py-2 px-4">{{ reserva.origen }}</td>
+                    <td class="py-2 px-4">
+                        <a href="{% url 'editar_reserva' reserva.id %}" class="btn btn-blue">Editar</a>
+                    </td>
+                    <td class="py-2 px-4">
+                        <button onclick="confirmDelete('{{ reserva.id }}')" class="btn btn-red">Eliminar</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pop-up de confirmación -->
+<div id="confirm-popup" class="popup">
+    <label class="close" onclick="closePopup()">&times;</label>
+    <h2>Confirmar Eliminación</h2>
+    <p>¿Estás seguro de que deseas eliminar esta reserva?</p>
+    <form id="delete-form" method="post" action="">
+        {% csrf_token %}
+        <div class="popup-buttons">
+            <button type="submit" class="btn btn-red">Eliminar</button>
+            <button type="button" class="btn btn-gray" onclick="closePopup()">Cancelar</button>
+        </div>
+    </form>
+</div>
+<label for="confirm-popup" class="popup-background" id="popup-background"></label>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmDelete(reservaId) {
+        document.getElementById('delete-form').action = `/eliminar_reserva/${reservaId}/`;
+        document.getElementById('confirm-popup').style.display = 'block';
+        document.getElementById('popup-background').style.display = 'block';
+    }
+
+    function closePopup() {
+        document.getElementById('confirm-popup').style.display = 'none';
+        document.getElementById('popup-background').style.display = 'none';
+    }
+</script>
+{% endblock %}
