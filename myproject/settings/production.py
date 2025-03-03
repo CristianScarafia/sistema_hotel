@@ -22,6 +22,20 @@ ALLOWED_HOSTS = [ '*' ]
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv("POSTGRES_DB"),
+        'USER': os.getenv("POSTGRES_USER"),
+        'PASSWORD': os.getenv("POSTGRES_PASSWORD"),
+        'HOST': os.getenv("POSTGRES_HOST"),
+        'PORT': os.getenv("POSTGRES_PORT"),
+        'OPTIONS': {
+            'client_encoding': 'UTF8',
+        },
+    }
+}
+"""
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DB_NAME'),
         'USER': os.environ.get('DB_USER'),
         'PASSWORD': os.environ.get('DB_PASSWORD'),
@@ -31,7 +45,8 @@ DATABASES = {
             'client_encoding': 'UTF8',  # Asegura que la conexión se haga en UTF-8
         },
     }
-}
+}"""
+
 
 LOGGING = {
     'version': 1,

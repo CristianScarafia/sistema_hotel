@@ -1,6 +1,6 @@
 FROM python:3.13-alpine
 
-WORKDIR /usr/app
+WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1
 
@@ -12,7 +12,7 @@ COPY ./requirements.txt ./
 
 RUN pip install -r requirements.txt
 
-COPY ./ ./
+COPY . .
 
 RUN chmod +x entrypoint.sh
 
