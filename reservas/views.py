@@ -16,6 +16,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate, login
 
 
 def custom_login(request):
@@ -28,10 +31,6 @@ def custom_login(request):
             if user is not None:
                 login(request, user)
                 return redirect("home")
-            else:
-                messages.error(request, "Usuario o contraseña incorrectos.")
-        else:
-            messages.error(request, "Formulario inválido.")
     else:
         form = AuthenticationForm()
     return render(request, "login.html", {"form": form})
@@ -299,6 +298,7 @@ def detalles_habitacion(request, numero_habitacion):
     return JsonResponse(detalles)
 
 
+@login_required
 def home(request):
     selected_date = request.GET.get("selected_date", date.today().strftime("%Y-%m-%d"))
 

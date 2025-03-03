@@ -1,4 +1,6 @@
 from django.urls import path
+from django.contrib.auth.views import LoginView, LogoutView
+
 from .views import (
     generar_planing,
     cargar_reserva,
@@ -19,4 +21,10 @@ urlpatterns = [
     path("listar_habitaciones/", listar_habitaciones, name="listar_habitaciones"),
     path("editar_reserva/<int:reserva_id>/", editar_reserva, name="editar_reserva"),
     path("update_fecha_inicio/", update_fecha_inicio, name="update_fecha_inicio"),
+    path(
+        "login/",
+        LoginView.as_view(template_name="registrations/login.html"),
+        name="login",
+    ),
+    path("logout/", LogoutView.as_view(next_page="login"), name="logout"),
 ]

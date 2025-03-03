@@ -1,0 +1,58 @@
+<style>
+    .login-form {
+        max-width: 300px;
+        margin: auto;
+        padding: 20px;
+        background-color: #f7f7f7;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-form input[type="text"],
+    .login-form input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .login-form button {
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .login-form button:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Identificarse</h2>
+<form method="post" class="login-form">
+    {% csrf_token %}
+    {# Mostrar errores generales del formulario #}
+    {{ form.non_field_errors }}
+    
+    <div>
+        <label for="{{ form.username.id_for_label }}">Usuario:</label>
+        {# Se renderiza el campo de usuario y sus errores #}
+        {{ form.username }}
+        {{ form.username.errors }}
+    </div>
+    <div>
+        <label for="{{ form.password.id_for_label }}">Contraseña:</label>
+        {# Se renderiza el campo de contraseña y sus errores #}
+        {{ form.password }}
+        {{ form.password.errors }}
+    </div>
+    <button type="submit">Login</button>
+</form>
+{% endblock %}

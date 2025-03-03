@@ -4,6 +4,7 @@ from reservas.views import home
 from reservas import views
 from django.conf.urls.static import static
 from django.conf import settings
+from django.contrib.auth.views import LoginView, LogoutView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -44,4 +45,10 @@ urlpatterns = [
         views.eliminar_habitacion,
         name="eliminar_habitacion",
     ),
+    path(
+        "login/",
+        LoginView.as_view(template_name="registration/login.html"),
+        name="login",
+    ),
+    path("logout/", LogoutView.as_view(next_page="login"), name="logout"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
