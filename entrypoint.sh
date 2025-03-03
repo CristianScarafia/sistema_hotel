@@ -7,8 +7,5 @@ echo 'Applying migrations...'
 python manage.py wait_for_db --settings=myproject.settings.production 
 python manage.py migrate --settings=myproject.settings.production
 
-RUN chmod +x entrypoint.sh
-
-
 echo 'Runing server...'
 gunicorn --env DJANGO_SETTINGS_MODULE=myproject.settings.production myproject.wsgi:application --bind 0.0.0.0:8000 
