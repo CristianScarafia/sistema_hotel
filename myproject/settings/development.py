@@ -1,11 +1,13 @@
-# no accents ni enie en comments
+# no accents ni enie in comments
 import os
-from .base import *  # noqa: F401,F403  # import all base settings safely
+from .base import *  # noqa: F401,F403
 
 DEBUG = True
 ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 
-# define DATABASES sin referenciar la variable importada para evitar F405/PyLance
+# force a non-empty secret for dev to avoid ImproperlyConfigured
+SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-unsafe-secret"
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
