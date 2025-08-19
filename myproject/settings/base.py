@@ -31,7 +31,6 @@ INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
 
 BASE_MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # (si lo usas)ç
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -105,21 +104,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-TEMPLATES = [
-    {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-            ],
-        },
-    },
-]
 
 INTERNAL_IPS = [
     "127.0.0.1",
@@ -127,10 +111,6 @@ INTERNAL_IPS = [
 SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Use database-backed sessions
 
 
-DEBUG_TOOLBAR_PANELS = [
-    "debug_toolbar.panels.timer.TimerPanel",
-    "debug_toolbar.panels.sql.SQLPanel",
-]
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 

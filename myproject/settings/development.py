@@ -1,26 +1,20 @@
-from .base import *
+# no accents ni enie en comments
 import os
+from .base import *  # noqa: F401,F403  # import all base settings safely
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "admin123"
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 
-ALLOWED_HOSTS = ["*"]
-
+# define DATABASES sin referenciar la variable importada para evitar F405/PyLance
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "sishotel"),
-        "USER": os.getenv("POSTGRES_USER", "postgres"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "1234"),
-        "HOST": os.getenv(
-            "POSTGRES_HOST", "localhost"
-        ),  # Se usará la variable de entorno
-        "PORT": os.getenv("POSTGRES_PORT", "5431"),
-        "OPTIONS": {
-            "client_encoding": "UTF8",
-        },
+        "NAME": os.environ.get("DB_NAME", "postgres"),
+        "USER": os.environ.get("DB_USER", "postgres"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "1234"),
+        "HOST": os.environ.get("DB_HOST", "db"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
+        "CONN_MAX_AGE": 60,
+        "ATOMIC_REQUESTS": True,
     }
 }

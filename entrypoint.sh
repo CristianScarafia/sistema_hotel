@@ -1,11 +1,30 @@
-#!/bin/bash
+#!/bin/sh
+set -euo pipefail
 
-echo 'Running collectstatic...'
-python manage.py collectstatic --no-input --settings=myproject.settings.production
+export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-myproject.settings.development}"
 
-echo 'Applying migrations...'
-python manage.py wait_for_db --settings=myproject.settings.production 
-python manage.py migrate --settings=myproject.settings.production
+# wait for db tcp only
+python - <<'PY'
+import os, time, socket
+host=os.environ['DB_HOST']; port=int(os.environ.get('DB_PORT','5432'))
+for _ in range(60):
+    try:
+        with socket.create_connection((host, port), timeout=3): break
+    except OSError:
+        print("Database unavailable, waiting 1 second...")
+        time.sleep(1)
+else:
+    raise SystemExit("DB not reachable")
+PY
 
-echo 'Runing server...'
-gunicorn --env DJANGO_SETTINGS_MODULE=myproject.settings.production myproject.wsgi:application --bind 0.0.0.0:8000 
+echo "collectstatic..."
+python manage.py collectstatic --noinput || true
+
+echo "migrate..."
+python manage.py migrate --noinput
+
+echo "gunicorn..."
+exec gunicorn myproject.wsgi:application \
+  --bind 0.0.0.0:8000 \
+  --workers 3 \
+  --timeout 120

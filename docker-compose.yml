@@ -1,29 +1,31 @@
-
 services:
+  db:
+    image: postgres:14.3-alpine3.16
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
   django:
     build: .
-    container_name: django
+    command: /app/entrypoint.sh
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
       - .:/app
-      - ./staticfiles:/usr/app/staticfiles  # Asegura que los archivos estáticos estén disponibles
-    env_file:
-      - .env.production
-    depends_on:
-      - postgres
-
-
-  postgres:
-    image: postgres:14.3-alpine3.16
-    container_name: postgres
-
-    ports:
-      - "5431:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    env_file:
-      - .env.production
 
 volumes:
-  postgres_data:
+  db_data:
