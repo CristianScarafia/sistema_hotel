@@ -1,58 +1,76 @@
-<style>
-    .login-form {
-        max-width: 300px;
-        margin: auto;
-        padding: 20px;
-        background-color: #f7f7f7;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .login-form input[type="text"],
-    .login-form input[type="password"] {
-        width: 100%;
-        padding: 10px;
-        margin: 10px 0;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-
-    .login-form button {
-        width: 100%;
-        padding: 10px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    .login-form button:hover {
-        background-color: #0056b3;
-    }
-</style>
-
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Identificarse</h2>
-<form method="post" class="login-form">
-    {% csrf_token %}
-    {# Mostrar errores generales del formulario #}
-    {{ form.non_field_errors }}
-    
-    <div>
-        <label for="{{ form.username.id_for_label }}">Usuario:</label>
-        {# Se renderiza el campo de usuario y sus errores #}
-        {{ form.username }}
-        {{ form.username.errors }}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="form-container max-w-md w-full">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="mb-4">
+                <svg class="w-16 h-16 mx-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Bienvenido</h1>
+            <p class="text-gray-600">Inicia sesión en el sistema del hotel</p>
+        </div>
+
+        <!-- Mensajes de error -->
+        {% if form.non_field_errors %}
+            <div class="message error mb-6">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Formulario -->
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="space-y-6">
+                <!-- Usuario -->
+                <div class="form-field">
+                    <label for="{{ form.username.id_for_label }}">
+                        {{ form.username.label }}
+                    </label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="form-error">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Contraseña -->
+                <div class="form-field">
+                    <label for="{{ form.password.id_for_label }}">
+                        {{ form.password.label }}
+                    </label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <div class="form-error">{{ form.password.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Botón de envío -->
+                <button type="submit" class="btn-primary w-full">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                    </svg>
+                    Iniciar Sesión
+                </button>
+            </div>
+        </form>
+
+        <!-- Información adicional -->
+        <div class="mt-8 text-center">
+            <p class="text-sm text-gray-500">
+                Sistema de Gestión Hotelera
+            </p>
+        </div>
     </div>
-    <div>
-        <label for="{{ form.password.id_for_label }}">Contraseña:</label>
-        {# Se renderiza el campo de contraseña y sus errores #}
-        {{ form.password }}
-        {{ form.password.errors }}
-    </div>
-    <button type="submit">Login</button>
-</form>
+</div>
 {% endblock %}

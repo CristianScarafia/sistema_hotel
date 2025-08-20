@@ -4,39 +4,43 @@
 {% block title %}Planning de Reservas{% endblock %}
 
 {% block content %}
-<div class="container mx-auto my-8 p-4 bg-white rounded shadow">
-    <h1 class="text-2xl font-semibold mb-4">Planning de Reservas</h1>
-    <div class="mb-4 p-2 bg-gray-200 rounded" id="date-container" data-date="{{ first_day }}">
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Planning de Reservas</h2>
+    </div>
+    <div class="mb-4 p-3 bg-gray-100 rounded-md" id="date-container" data-date="{{ first_day }}">
         <span id="date-display">Fecha de inicio: {{ first_day|date:"M. d, Y" }}</span>
         <input type="date" id="date-input" value="{{ first_day }}" class="hidden" />
     </div>
     <div class="table-container">
-        <table class="planning-table">
-            <thead>
-                <tr class="bg-gray-800 text-white">
-                    <th class="py-2 px-4" style="width: 100px;">Número de Habitación</th>
-                    <th class="py-2 px-4" style="width: 100px;">Tipo</th>
-                    {% for day in days %}
-                    <th class="py-2 px-4">{{ day|date:"d/M" }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in planing %}
-                    <tr class="habitacion-{{ item.habitacion.tipo }}">
-                        <td>{{ item.habitacion.numero }}</td>
-                        <td>{{ item.habitacion.tipo }}</td>
-                        {% for ocupacion in item.ocupaciones %}
-                            <td class="{% if ocupacion.is_last_night %}last-night-cell{% elif ocupacion.is_occupied %}occupied-cell{% endif %}">
-                                {% if ocupacion.is_occupied and ocupacion.nombre %}
-                                    <span class="nombre-huesped">{{ ocupacion.nombre }}</span>
-                                {% endif %}
-                            </td>
+        <div class="table-responsive">
+            <table class="planning-table">
+                <thead>
+                    <tr>
+                        <th>Número de Habitación</th>
+                        <th>Tipo</th>
+                        {% for day in days %}
+                        <th>{{ day|date:"d/M" }}</th>
                         {% endfor %}
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for item in planing %}
+                        <tr class="habitacion-{{ item.habitacion.tipo }}">
+                            <td>{{ item.habitacion.numero }}</td>
+                            <td>{{ item.habitacion.tipo }}</td>
+                            {% for ocupacion in item.ocupaciones %}
+                                <td class="{% if ocupacion.is_last_night %}last-night-cell{% elif ocupacion.is_occupied %}occupied-cell{% endif %}">
+                                    {% if ocupacion.is_occupied and ocupacion.nombre %}
+                                        <span class="nombre-huesped">{{ ocupacion.nombre }}</span>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

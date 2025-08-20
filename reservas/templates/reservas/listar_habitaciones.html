@@ -4,35 +4,39 @@
 {% block title %}Listar Habitaciones{% endblock %}
 
 {% block content %}
-<div class="container mx-auto my-8 p-4 bg-white rounded shadow">
-    <h1 class="text-2xl font-semibold mb-4 text-center">Listar Habitaciones</h1>
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Listar Habitaciones</h2>
+    </div>
     <div class="table-container">
-        <table class="general-table min-w-full bg-white rounded shadow-md overflow-hidden">
-            <thead>
-                <tr class="bg-gray-800 text-white">
-                    <th class="py-2 px-4">Número</th>
-                    <th class="py-2 px-4">Tipo</th>
-                    <th class="py-2 px-4">Piso</th>
-                    <th class="py-2 px-2 text-center" style="width: 80px;">Editar</th>
-                    <th class="py-2 px-2 text-center" style="width: 80px;">Eliminar</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for habitacion in habitaciones %}
-                <tr>
-                    <td class="py-2 px-4">{{ habitacion.numero }}</td>
-                    <td class="py-2 px-4">{{ habitacion.tipo }}</td>
-                    <td class="py-2 px-4">{{ habitacion.piso }}</td>
-                    <td class="py-2 px-2 text-center">
-                        <a href="{% url 'editar_habitacion' habitacion.id %}" class="btn btn-blue">Editar</a>
-                    </td>
-                    <td class="py-2 px-2 text-center">
-                        <button onclick="confirmDelete('{{ habitacion.id }}')" class="btn btn-red">Eliminar</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Tipo</th>
+                        <th>Piso</th>
+                        <th>Editar</th>
+                        <th>Eliminar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for habitacion in habitaciones %}
+                    <tr>
+                        <td>{{ habitacion.numero }}</td>
+                        <td>{{ habitacion.tipo }}</td>
+                        <td>{{ habitacion.piso }}</td>
+                        <td>
+                            <a href="{% url 'editar_habitacion' habitacion.id %}" class="btn-primary">Editar</a>
+                        </td>
+                        <td>
+                            <button onclick="confirmDelete('{{ habitacion.id }}')" class="btn-secondary">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -43,9 +47,9 @@
     <p>¿Estás seguro de que deseas eliminar esta habitación?</p>
     <form id="delete-form" method="post" action="">
         {% csrf_token %}
-        <div class="popup-buttons">
-            <button type="submit" class="btn btn-red">Eliminar</button>
-            <button type="button" class="btn btn-gray" onclick="closePopup()">Cancelar</button>
+        <div class="flex gap-4 justify-end mt-4">
+            <button type="submit" class="btn-secondary">Eliminar</button>
+            <button type="button" class="btn-primary" onclick="closePopup()">Cancelar</button>
         </div>
     </form>
 </div>

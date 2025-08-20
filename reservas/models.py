@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.auth.models import User
+
 class Habitacion(models.Model):
     numero = models.CharField(max_length=10)
     tipo = models.CharField(max_length=50, default='doble')
@@ -38,3 +40,31 @@ class Reserva(models.Model):
 
     def get_nombre_huesped(self):
         return self.nombre
+
+class PerfilUsuario(models.Model):
+    ROLES_CHOICES = [
+        ('conserge', 'Conserje'),
+        ('supervisor', 'Supervisor'),
+    ]
+    
+    TURNOS_CHOICES = [
+        ('mañana', 'Mañana'),
+        ('tarde', 'Tarde'),
+        ('noche', 'Noche'),
+    ]
+    
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
+    rol = models.CharField(max_length=20, choices=ROLES_CHOICES, default='conserge')
+    turno = models.CharField(max_length=20, choices=TURNOS_CHOICES, default='mañana')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.get_rol_display()} ({self.get_turno_display()})"
+    
+    def es_supervisor(self):
+        return self.rol == 'supervisor'
+    
+    class Meta:
+        verbose_name = "Perfil de Usuario"
+        verbose_name_plural = "Perfiles de Usuario"

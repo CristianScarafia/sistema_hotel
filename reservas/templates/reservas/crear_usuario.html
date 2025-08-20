@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear Usuario{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <div class="mb-4">
+            <svg class="w-12 h-12 mx-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+            </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Crear Nuevo Usuario</h1>
+        <p class="text-gray-600">Complete los datos para registrar un nuevo usuario en el sistema</p>
+        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p class="text-sm text-blue-800">
+                <strong>Roles disponibles:</strong><br>
+                • <strong>Conserje:</strong> Puede gestionar reservas y habitaciones<br>
+                • <strong>Supervisor:</strong> Puede crear usuarios y tiene acceso completo al sistema
+            </p>
+        </div>
+    </div>
+
+    <!-- Mensajes de alerta -->
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    <div class="flex items-center">
+                        {% if message.tags == 'success' %}
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                        {% elif message.tags == 'error' %}
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                        {% endif %}
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Formulario -->
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Mensajes de error del formulario -->
+        {% if form.errors %}
+        <div class="message error mb-6">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <div>
+                    <h3 class="font-medium">Se encontraron errores en el formulario</h3>
+                    <ul class="mt-2 list-disc list-inside space-y-1">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Campos del formulario -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Nombre de Usuario -->
+            <div class="form-field">
+                <label for="{{ form.username.id_for_label }}">
+                    {{ form.username.label }}
+                </label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="form-error">{{ form.username.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Email -->
+            <div class="form-field">
+                <label for="{{ form.email.id_for_label }}">
+                    {{ form.email.label }}
+                </label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="form-error">{{ form.email.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Nombre -->
+            <div class="form-field">
+                <label for="{{ form.first_name.id_for_label }}">
+                    {{ form.first_name.label }}
+                </label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                    <div class="form-error">{{ form.first_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Apellido -->
+            <div class="form-field">
+                <label for="{{ form.last_name.id_for_label }}">
+                    {{ form.last_name.label }}
+                </label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                    <div class="form-error">{{ form.last_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Contraseñas -->
+        <div class="space-y-4 mb-6">
+            <div class="form-field">
+                <label for="{{ form.password1.id_for_label }}">
+                    {{ form.password1.label }}
+                </label>
+                {{ form.password1 }}
+                {% if form.password1.help_text %}
+                    <div class="form-help-text">
+                        {{ form.password1.help_text|safe }}
+                    </div>
+                {% endif %}
+                {% if form.password1.errors %}
+                    <div class="form-error">{{ form.password1.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.password2.id_for_label }}">
+                    {{ form.password2.label }}
+                </label>
+                {{ form.password2 }}
+                {% if form.password2.help_text %}
+                    <div class="form-help-text">{{ form.password2.help_text }}</div>
+                {% endif %}
+                {% if form.password2.errors %}
+                    <div class="form-error">{{ form.password2.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Rol y Turno -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="form-field">
+                <label for="{{ form.rol.id_for_label }}">
+                    {{ form.rol.label }}
+                </label>
+                {{ form.rol }}
+                {% if form.rol.errors %}
+                    <div class="form-error">{{ form.rol.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.turno.id_for_label }}">
+                    {{ form.turno.label }}
+                </label>
+                {{ form.turno }}
+                {% if form.turno.errors %}
+                    <div class="form-error">{{ form.turno.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-end">
+            <a href="{% url 'home' %}" class="btn-secondary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Cancelar
+            </a>
+            <button type="submit" class="btn-primary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Crear Usuario
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

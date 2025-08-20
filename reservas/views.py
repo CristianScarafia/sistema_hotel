@@ -19,6 +19,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import authenticate, login
+from .forms import UsuarioForm
+from .decorators import supervisor_required
+from .models import PerfilUsuario
 
 
 def custom_login(request):
@@ -93,6 +96,7 @@ def update_checkins_checkouts(request):
     return JsonResponse({"checkins": checkins_data, "checkouts": checkouts_data})
 
 
+@login_required
 def generar_planing(request):
     start_date_str = request.GET.get("start_date")
 
@@ -501,3 +505,33 @@ def editar_reserva(request, reserva_id):
     else:
         form = ReservaForm(instance=reserva)
     return render(request, "reservas/editar_reserva.html", {"form": form})
+
+
+@login_required
+@supervisor_required
+def crear_usuario(request):
+    if request.method == "POST":
+        form = UsuarioForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+
+            # Crear el perfil del usuario
+            perfil = PerfilUsuario.objects.create(
+                usuario=user,
+                rol=form.cleaned_data["rol"],
+                turno=form.cleaned_data["turno"],
+            )
+
+            messages.success(
+                request,
+                f"Usuario '{user.username}' creado exitosamente como {perfil.get_rol_display()} "
+                f"del turno {perfil.get_turno_display()}. "
+                "El usuario ya puede iniciar sesión en el sistema.",
+            )
+            return redirect("home")
+        else:
+            messages.error(request, "Por favor corrija los errores en el formulario.")
+    else:
+        form = UsuarioForm()
+
+    return render(request, "reservas/crear_usuario.html", {"form": form})

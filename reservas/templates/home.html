@@ -4,76 +4,42 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<input type="checkbox" id="popup-toggle" style="display: none;">
-<div class="container mx-auto my-8 p-4 bg-white rounded shadow">
-    <h1 class="text-2xl font-semibold mb-4 text-center">Bienvenido al Sistema del Hotel</h1>
-    
-    <div class="flex-container">
-        <!-- Check-In y Check-Out -->
-        <div class="independent-box" style="max-width: 800px;" >
-            <h2 class="text-xl font-semibold mb-2">Check-In/Check-Out del Día</h2>
-            <input type="date" id="selected_date" value="{{ selected_date }}" class="mb-4 p-2 border rounded w-full">
-            <div class="table-container">
-                <h3 class="text-lg font-semibold mb-2">Check-In</h3>
-                <table class="general-table min-w-full bg-white rounded shadow-md overflow-hidden">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Check-In y Check-Out -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Check-In/Check-Out del Día</h2>
+        </div>
+        <input type="date" id="selected_date" value="{{ selected_date }}" class="form-field input">
+        
+        <!-- Check-In -->
+        <div class="table-container">
+            <h3 class="text-lg font-semibold mb-2">Check-In</h3>
+            <div class="table-responsive">
+                <table>
                     <thead>
-                        <tr class="bg-gray-800 text-white">
-                            <th class="py-2 px-4">Habitación</th>
-                            <th class="py-2 px-4">Nombre</th>
-                            <th class="py-2 px-4">Apellido</th>
-                            <th class="py-2 px-4">Llegada</th>
-                            <th class="py-2 px-4">Salida</th>
-                            <th class="py-2 px-4">Personas</th>
-                            <th class="py-2 px-4">Resto a Abonar</th>
-                            <th class="py-2 px-4">Observaciones</th>
-                            <th class="py-2 px-4">Check</th>
+                        <tr>
+                            <th>Habitación</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Llegada</th>
+                            <th>Salida</th>
+                            <th>Personas</th>
+                            <th>Resto</th>
+                            <th>Check</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for reserva in checkin %}
                         <tr ondblclick="loadReservaDetail('{{ reserva.id }}')">
-                            <td class="py-2 px-4">{{ reserva.nhabitacion.numero }}</td>
-                            <td class="py-2 px-4">{{ reserva.nombre }}</td>
-                            <td class="py-2 px-4">{{ reserva.apellido }}</td>
-                            <td class="py-2 px-4">{{ reserva.fecha_ingreso }}</td>
-                            <td class="py-2 px-4">{{ reserva.fecha_egreso }}</td>
-                            <td class="py-2 px-4">{{ reserva.personas }}</td>
-                            <td class="py-2 px-4">{{ reserva.resto_formatted }}</td>
-                            <td class="py-2 px-4">{{ reserva.observaciones }}</td>
-                            <td class="py-2 px-4"><input type="checkbox"></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="table-container mt-4">
-                <h3 class="text-lg font-semibold mb-2">Check-Out</h3>
-                <table class="general-table min-w-full bg-white rounded shadow-md overflow-hidden">
-                    <thead>
-                        <tr class="bg-gray-800 text-white">
-                            <th class="py-2 px-4">Habitación</th>
-                            <th class="py-2 px-4">Nombre</th>
-                            <th class="py-2 px-4">Apellido</th>
-                            <th class="py-2 px-4">Llegada</th>
-                            <th class="py-2 px-4">Salida</th>
-                            <th class="py-2 px-4">Personas</th>
-                            <th class="py-2 px-4">Resto a Abonar</th>
-                            <th class="py-2 px-4">Observaciones</th>
-                            <th class="py-2 px-4">Check</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for reserva in checkout %}
-                        <tr ondblclick="loadReservaDetail('{{ reserva.id }}')">
-                            <td class="py-2 px-4">{{ reserva.nhabitacion.numero }}</td>
-                            <td class="py-2 px-4">{{ reserva.nombre }}</td>
-                            <td class="py-2 px-4">{{ reserva.apellido }}</td>
-                            <td class="py-2 px-4">{{ reserva.fecha_ingreso }}</td>
-                            <td class="py-2 px-4">{{ reserva.fecha_egreso }}</td>
-                            <td class="py-2 px-4">{{ reserva.personas }}</td>
-                            <td class="py-2 px-4">{{ reserva.resto_formatted }}</td>
-                            <td class="py-2 px-4">{{ reserva.observaciones }}</td>
-                            <td class="py-2 px-4"><input type="checkbox"></td>
+                            <td>{{ reserva.nhabitacion.numero }}</td>
+                            <td>{{ reserva.nombre }}</td>
+                            <td>{{ reserva.apellido }}</td>
+                            <td>{{ reserva.fecha_ingreso }}</td>
+                            <td>{{ reserva.fecha_egreso }}</td>
+                            <td>{{ reserva.personas }}</td>
+                            <td>{{ reserva.resto_formatted }}</td>
+                            <td><input type="checkbox"></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -81,35 +47,86 @@
             </div>
         </div>
         
-        <!-- Mapa de habitaciones -->
-        <div class="independent-box" style="margin-left: 20px; max-width: 800px; min-width: 500px; height: 650px;"> 
-            <h2 class="text-xl font-semibold mb-2">Mapa de Habitaciones</h2>
-            <div class="habitaciones-grid">
-                {% for habitacion in estado_habitaciones %}
-                    <div class="habitacion {% if habitacion.ocupada %}ocupada{% else %}desocupada{% endif %}">
-                        <span>{{ habitacion.numero }}<br>({{ habitacion.tipo }})</span>
-                    </div>
-                {% endfor %}
+        <!-- Check-Out -->
+        <div class="table-container mt-4">
+            <h3 class="text-lg font-semibold mb-2">Check-Out</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Habitación</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Llegada</th>
+                            <th>Salida</th>
+                            <th>Personas</th>
+                            <th>Resto</th>
+                            <th>Check</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reserva in checkout %}
+                        <tr ondblclick="loadReservaDetail('{{ reserva.id }}')">
+                            <td>{{ reserva.nhabitacion.numero }}</td>
+                            <td>{{ reserva.nombre }}</td>
+                            <td>{{ reserva.apellido }}</td>
+                            <td>{{ reserva.fecha_ingreso }}</td>
+                            <td>{{ reserva.fecha_egreso }}</td>
+                            <td>{{ reserva.personas }}</td>
+                            <td>{{ reserva.resto_formatted }}</td>
+                            <td><input type="checkbox"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-
-    <!-- Lista de ultimas reservas -->
-    <div class="independent-box" style="max-width: 800px;">
-        <h2 class="text-xl font-semibold mb-2">Últimas Reservas</h2>
-        <ul>
-            {% for reserva in reservas %}
-                <li><label for="popup-toggle" onclick="loadReservaDetail('{{ reserva.id }}')">{{ reserva.nombre }} - {{ reserva.fecha_ingreso }}</label></li>
+    
+    <!-- Mapa de habitaciones -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Mapa de Habitaciones</h2>
+        </div>
+        <div class="habitaciones-grid">
+            {% for habitacion in estado_habitaciones %}
+                <div class="habitacion {% if habitacion.ocupada %}ocupada{% else %}desocupada{% endif %}">
+                    <span>{{ habitacion.numero }}<br>({{ habitacion.tipo }})</span>
+                </div>
             {% endfor %}
-        </ul>
-    </div>
-    <!-- Cotización del dólar -->
-    <div class="independent-box dollar-box" style="min-width: 500px;">
-        <h2 class="text-xl font-semibold mb-2">Cotización del Dólar</h2>
-        <p class="dollar-rate">La cotización actual del dólar es: <span class="dollar-price">{{ dollar_rate }}</span></p>
+        </div>
     </div>
 </div>
 
+<!-- Información adicional -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Lista de últimas reservas -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Últimas Reservas</h2>
+        </div>
+        <ul class="space-y-2">
+            {% for reserva in reservas %}
+                <li class="p-2 hover:bg-gray-50 rounded cursor-pointer" onclick="loadReservaDetail('{{ reserva.id }}')">
+                    {{ reserva.nombre }} - {{ reserva.fecha_ingreso }}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <!-- Cotización del dólar -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Cotización del Dólar</h2>
+        </div>
+        <p class="text-lg">
+            La cotización actual del dólar es: 
+            <span class="font-bold text-green-600">{{ dollar_rate }}</span>
+        </p>
+    </div>
+</div>
+
+<!-- Popup para detalles de reserva -->
 <input type="checkbox" id="popup-toggle" style="display: none;">
 <label for="popup-toggle" class="popup-background"></label>
 <div id="reserva-popup" class="popup">

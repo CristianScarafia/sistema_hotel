@@ -11,6 +11,7 @@ from .views import (
     update_fecha_inicio,
     editar_habitacion,
     eliminar_habitacion,
+    crear_usuario,
 )
 
 urlpatterns = [
@@ -21,6 +22,7 @@ urlpatterns = [
     path("listar_habitaciones/", listar_habitaciones, name="listar_habitaciones"),
     path("editar_reserva/<int:reserva_id>/", editar_reserva, name="editar_reserva"),
     path("update_fecha_inicio/", update_fecha_inicio, name="update_fecha_inicio"),
+    path("crear_usuario/", crear_usuario, name="crear_usuario"),
     path(
         "login/",
         LoginView.as_view(template_name="registrations/login.html"),
