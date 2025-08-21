@@ -2,9 +2,29 @@ import axios from 'axios';
 
 // Configurar axios
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://localhost:8000/api',
   withCredentials: true,
 });
+
+// Interceptor para manejar CSRF
+api.interceptors.request.use(
+  (config) => {
+    // Obtener el token CSRF de las cookies
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('csrftoken='))
+      ?.split('=')[1];
+    
+    if (csrfToken) {
+      config.headers['X-CSRFToken'] = csrfToken;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Interceptor para manejar errores
 api.interceptors.response.use(
@@ -18,7 +38,7 @@ api.interceptors.response.use(
   }
 );
 
-// Servicios para Reservas
+// Servicios de reservas
 export const reservasService = {
   getAll: () => api.get('/reservas/'),
   getById: (id) => api.get(`/reservas/${id}/`),
@@ -26,22 +46,29 @@ export const reservasService = {
   update: (id, data) => api.put(`/reservas/${id}/`, data),
   delete: (id) => api.delete(`/reservas/${id}/`),
   getHoy: () => api.get('/reservas/hoy/'),
-  getCheckinsHoy: () => api.get('/reservas/checkins-hoy/'),
-  getCheckoutsHoy: () => api.get('/reservas/checkouts-hoy/'),
-  getPorFecha: (fecha) => api.get(`/reservas/por-fecha/?fecha=${fecha}`),
-  getPorHabitacion: (habitacionId) => api.get(`/reservas/por-habitacion/?habitacion_id=${habitacionId}`),
 };
 
-// Servicios para Habitaciones
+// Servicios de habitaciones
 export const habitacionesService = {
   getAll: () => api.get('/habitaciones/'),
   getById: (id) => api.get(`/habitaciones/${id}/`),
   create: (data) => api.post('/habitaciones/', data),
   update: (id, data) => api.put(`/habitaciones/${id}/`, data),
   delete: (id) => api.delete(`/habitaciones/${id}/`),
-  getDisponibles: () => api.get('/habitaciones/disponibles/'),
-  getOcupadas: () => api.get('/habitaciones/ocupadas/'),
-  getPorTipo: (tipo) => api.get(`/habitaciones/por-tipo/?tipo=${tipo}`),
+};
+
+// Servicios de planning
+export const planningService = {
+  getPlanning: (startDate) => api.get(`/planning/planning/?start_date=${startDate}`),
+};
+
+// Servicios de usuarios
+export const usuariosService = {
+  getAll: () => api.get('/usuarios/'),
+  getById: (id) => api.get(`/usuarios/${id}/`),
+  create: (data) => api.post('/usuarios/', data),
+  update: (id, data) => api.put(`/usuarios/${id}/`, data),
+  delete: (id) => api.delete(`/usuarios/${id}/`),
 };
 
 // Servicios para Estadísticas

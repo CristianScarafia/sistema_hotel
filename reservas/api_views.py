@@ -6,17 +6,21 @@ from rest_framework.authentication import SessionAuthentication
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from .models import Reserva, Habitacion, PerfilUsuario
 from .serializers import (
     ReservaSerializer,
     HabitacionSerializer,
     UserSerializer,
+    UserCreateUpdateSerializer,
     PerfilUsuarioSerializer,
     ReservaListSerializer,
     HabitacionListSerializer,
     EstadisticasSerializer,
     ReservaCreateSerializer,
+    UsuarioListSerializer,
 )
 
 
@@ -68,7 +72,7 @@ class HabitacionViewSet(viewsets.ModelViewSet):
 
     queryset = Habitacion.objects.all()
     serializer_class = HabitacionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]  # Permitir acceso sin autenticación
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -109,7 +113,7 @@ class ReservaViewSet(viewsets.ModelViewSet):
 
     queryset = Reserva.objects.all().order_by("-id")
     serializer_class = ReservaSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]  # Cambiar temporalmente para permitir acceso sin autenticación
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -280,3 +284,135 @@ class PerfilUsuarioViewSet(viewsets.ModelViewSet):
             return Response(
                 {"error": "Perfil no encontrado"}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+class UsuarioViewSet(viewsets.ModelViewSet):
+    """ViewSet para el modelo User"""
+
+    from django.contrib.auth.models import User
+    queryset = User.objects.all()
+    permission_classes = [permissions.AllowAny]  # Permitir acceso sin autenticación
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return UserCreateUpdateSerializer
+        elif self.action == "list":
+            return UsuarioListSerializer
+        return UserSerializer
+
+    def list(self, request, *args, **kwargs):
+        """Listar usuarios con logs de depuración"""
+        print("=== LISTANDO USUARIOS ===")
+        queryset = self.get_queryset()
+        print(f"Queryset: {queryset}")
+        print(f"Cantidad de usuarios: {queryset.count()}")
+        
+        serializer = self.get_serializer(queryset, many=True)
+        print(f"Datos serializados: {serializer.data}")
+        
+        return Response(serializer.data)
+
+    def perform_create(self, serializer):
+        """Crear usuario con contraseña encriptada"""
+        print("=== CREANDO USUARIO ===")
+        user = serializer.save()
+        print(f"Usuario creado: {user.username}")
+        return user
+
+    def perform_update(self, serializer):
+        """Actualizar usuario"""
+        user = serializer.save()
+        return user
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PlanningViewSet(viewsets.ViewSet):
+    """ViewSet para el planning de reservas"""
+    
+    permission_classes = [permissions.AllowAny]  # Permitir acceso sin autenticación
+    
+    @action(detail=False, methods=['get'])
+    def planning(self, request):
+        """Obtener datos del planning de reservas"""
+        start_date_str = request.GET.get("start_date")
+        
+        if start_date_str:
+            try:
+                first_day = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            except ValueError:
+                first_day = date.today().replace(day=1)
+        else:
+            first_day = date.today().replace(day=1)
+        
+        # Generar 60 días desde la fecha de inicio
+        days = [first_day + timedelta(days=i) for i in range(60)]
+        
+        # Obtener todas las habitaciones ordenadas por tipo
+        habitaciones = list(Habitacion.objects.all())
+        tipo_orden = {"doble": 1, "triple": 2, "cuadruple": 3, "quintuple": 4}
+        habitaciones.sort(key=lambda x: tipo_orden.get(x.tipo, 5))
+        
+        # Obtener reservas que se superponen con el período
+        reservas = Reserva.objects.filter(
+            fecha_ingreso__lte=days[-1], 
+            fecha_egreso__gte=days[0]
+        ).select_related("nhabitacion")
+        
+        planning_data = []
+        for habitacion in habitaciones:
+            ocupaciones = []
+            nombre_mostrado = set()
+            reservas_habitacion = reservas.filter(nhabitacion=habitacion)
+            
+            for day in days:
+                ocupacion = None
+                for reserva in reservas_habitacion:
+                    if reserva.fecha_ingreso <= day < reserva.fecha_egreso:
+                        if (day == reserva.fecha_ingreso and reserva.id not in nombre_mostrado):
+                            nombre_mostrado.add(reserva.id)
+                            ocupacion = {
+                                "is_occupied": True,
+                                "is_last_night": day == reserva.fecha_egreso - timedelta(days=1),
+                                "nombre": reserva.nombre,
+                                "reserva_id": reserva.id,
+                                "fecha_ingreso": reserva.fecha_ingreso.isoformat(),
+                                "fecha_egreso": reserva.fecha_egreso.isoformat(),
+                            }
+                        else:
+                            ocupacion = {
+                                "is_occupied": True,
+                                "is_last_night": day == reserva.fecha_egreso - timedelta(days=1),
+                                "nombre": None,
+                                "reserva_id": reserva.id,
+                                "fecha_ingreso": reserva.fecha_ingreso.isoformat(),
+                                "fecha_egreso": reserva.fecha_egreso.isoformat(),
+                            }
+                        break
+                
+                if not ocupacion:
+                    ocupacion = {
+                        "is_occupied": False,
+                        "is_last_night": False,
+                        "nombre": None,
+                        "reserva_id": None,
+                        "fecha_ingreso": None,
+                        "fecha_egreso": None,
+                    }
+                
+                ocupaciones.append(ocupacion)
+            
+            planning_data.append({
+                "habitacion": {
+                    "id": habitacion.id,
+                    "numero": habitacion.numero,
+                    "tipo": habitacion.tipo,
+                    "piso": habitacion.piso,
+                },
+                "ocupaciones": ocupaciones
+            })
+        
+        return Response({
+            "planning": planning_data,
+            "days": [day.isoformat() for day in days],
+            "first_day": first_day.isoformat(),
+        })

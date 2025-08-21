@@ -9,7 +9,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Reservas from './pages/Reservas';
 import Habitaciones from './pages/Habitaciones';
+import EntradasSalidas from './pages/EntradasSalidas';
 import Login from './pages/Login';
+import Planning from './pages/Planning';
+import Usuarios from './pages/Usuarios';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
@@ -18,26 +21,54 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Layout>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={
-              <ProtectedRoute>
+        <Routes>
+          {/* Ruta pública de login */}
+          <Route path="/login" element={<Login />} />
+          
+          {/* Rutas protegidas con Layout */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout>
                 <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/reservas" element={
-              <ProtectedRoute>
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/reservas" element={
+            <ProtectedRoute>
+              <Layout>
                 <Reservas />
-              </ProtectedRoute>
-            } />
-            <Route path="/habitaciones" element={
-              <ProtectedRoute>
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/habitaciones" element={
+            <ProtectedRoute>
+              <Layout>
                 <Habitaciones />
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </Layout>
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/entradas-salidas" element={
+            <ProtectedRoute>
+              <Layout>
+                <EntradasSalidas />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/planning" element={
+            <ProtectedRoute>
+              <Layout>
+                <Planning />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/usuarios" element={
+            <ProtectedRoute>
+              <Layout>
+                <Usuarios />
+              </Layout>
+            </ProtectedRoute>
+          } />
+        </Routes>
         <ToastContainer
           position="top-right"
           autoClose={5000}

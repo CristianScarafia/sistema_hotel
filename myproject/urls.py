@@ -14,6 +14,6 @@ urlpatterns = [
     path("api/", include("reservas.api_urls")),
     path("api-auth/", include("rest_framework.urls")),
     # path("api-docs/", include_docs_urls(title="Hotel API")),
-    # Redirigir la raíz a la API para mostrar la interfaz de DRF
-    path("", include("reservas.api_urls")),
+    # Vistas de Django
+    path("", include("reservas.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -167,6 +167,16 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = False  # Cambiar a True en producción con HTTPS
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/

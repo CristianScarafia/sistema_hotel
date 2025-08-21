@@ -7,7 +7,10 @@ import {
   FaUsers, 
   FaChartBar, 
   FaCog,
-  FaHotel
+  FaHotel,
+  FaSignInAlt,
+  FaSignOutAlt,
+  FaCalendarCheck
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -17,9 +20,11 @@ const Sidebar = () => {
     { path: '/', icon: FaHome, label: 'Dashboard', exact: true },
     { path: '/reservas', icon: FaCalendarAlt, label: 'Reservas' },
     { path: '/habitaciones', icon: FaBed, label: 'Habitaciones' },
+    { path: '/entradas-salidas', icon: FaSignInAlt, label: 'Entradas y Salidas' },
     { path: '/usuarios', icon: FaUsers, label: 'Usuarios' },
     { path: '/estadisticas', icon: FaChartBar, label: 'Estadísticas' },
     { path: '/configuracion', icon: FaCog, label: 'Configuración' },
+    { path: '/planning', icon: FaCalendarCheck, label: 'Planning' },
   ];
 
   const isActive = (path, exact = false) => {
@@ -67,7 +72,7 @@ const Sidebar = () => {
       <div className="p-4 border-t border-gray-700">
         <div className="text-sm text-gray-400">
           <p>© 2024 Sistema Hotel</p>
-          <p className="text-xs mt-1">v1.0.0</p>
+          <p className="text-xs mt-1">v1.0.0 - Diseñado y desarrollado por Cristian Scarafia</p>
         </div>
       </div>
     </div>
