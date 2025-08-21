@@ -2,3 +2,4 @@ myenv/
 venv/
 reservas/__pycache__/
 myproject/__pycache__/
+node_modules

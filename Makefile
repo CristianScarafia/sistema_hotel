@@ -68,6 +68,18 @@ dev-collectstatic: ## Recolectar archivos estáticos (desarrollo)
 createsuperuser: ## Crear superusuario
 	docker-compose -f $(COMPOSE_FILE) exec web python manage.py crear_supervisor
 
+dev-createsuperuser: ## Crear superusuario (desarrollo)
+	docker-compose -f $(COMPOSE_DEV_FILE) exec web python manage.py crear_supervisor
+
+dev-migrate: ## Ejecutar migraciones (desarrollo)
+	docker-compose -f $(COMPOSE_DEV_FILE) exec web python manage.py migrate
+
+dev-makemigrations: ## Crear migraciones (desarrollo)
+	docker-compose -f $(COMPOSE_DEV_FILE) exec web python manage.py makemigrations
+
+dev-shell: ## Acceder al shell de Django (desarrollo)
+	docker-compose -f $(COMPOSE_DEV_FILE) exec web python manage.py shell
+
 # ===== COMANDOS DE BASE DE DATOS =====
 
 db-shell: ## Acceder al shell de PostgreSQL
@@ -78,6 +90,35 @@ db-backup: ## Crear backup de la base de datos
 
 db-restore: ## Restaurar backup de la base de datos (especificar archivo con BACKUP_FILE=archivo.sql)
 	docker-compose -f $(COMPOSE_FILE) exec -T db psql -U postgres hotel_db < $(BACKUP_FILE)
+
+dev-db-shell: ## Acceder al shell de PostgreSQL (desarrollo)
+	docker-compose -f $(COMPOSE_DEV_FILE) exec db psql -U postgres -d hotel_db
+
+dev-db-backup: ## Crear backup de la base de datos (desarrollo)
+	docker-compose -f $(COMPOSE_DEV_FILE) exec db pg_dump -U postgres hotel_db > backup_dev_$(shell date +%Y%m%d_%H%M%S).sql
+
+dev-db-restore: ## Restaurar backup de la base de datos (desarrollo) (especificar archivo con BACKUP_FILE=archivo.sql)
+	docker-compose -f $(COMPOSE_DEV_FILE) exec -T db psql -U postgres hotel_db < $(BACKUP_FILE)
+
+dev-db-reset: ## Resetear base de datos de desarrollo (¡CUIDADO! Esto elimina todos los datos)
+	docker-compose -f $(COMPOSE_DEV_FILE) down
+	docker volume rm sistema_hotel_db_data || true
+	docker-compose -f $(COMPOSE_DEV_FILE) up -d
+
+init-dev: ## Inicializar proyecto de desarrollo (setup completo)
+	@echo "$(GREEN)🚀 Inicializando proyecto de desarrollo...$(NC)"
+	@if [ ! -f .env ]; then \
+		echo "$(YELLOW)⚠️  Archivo .env no encontrado. Creando archivo .env por defecto...$(NC)"; \
+		cp env.example .env; \
+		echo "$(GREEN)✅ Archivo .env creado desde env.example$(NC)"; \
+	fi
+	docker-compose -f $(COMPOSE_DEV_FILE) build
+	docker-compose -f $(COMPOSE_DEV_FILE) up -d
+	@echo "$(GREEN)✅ Proyecto inicializado correctamente$(NC)"
+	@echo "$(YELLOW)📋 Información de acceso:$(NC)"
+	@echo "  🌐 Aplicación web: http://localhost:8000"
+	@echo "  👤 Usuario por defecto: admin"
+	@echo "  🔑 Contraseña por defecto: admin123"
 
 # ===== COMANDOS DE LIMPIEZA =====
 

@@ -10,6 +10,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "toastr": "^2.1.4"
+  },
   "devDependencies": {
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.40",

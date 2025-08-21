@@ -1,169 +1,70 @@
-# Script de desarrollo para automatizar tareas comunes (PowerShell)
+# Script de PowerShell para el entorno de desarrollo del Sistema Hotel
 param(
     [Parameter(Position=0)]
-    [string]$Command = "help"
+    [ValidateSet("up", "down", "restart", "logs", "build", "status")]
+    [string]$Command = "status"
 )
 
-# Función de logging
-function Write-Log {
-    param([string]$Message)
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "[$timestamp] $Message" -ForegroundColor Blue
-}
+$ComposeFile = "docker-compose.dev.yml"
 
-function Write-Success {
-    param([string]$Message)
-    Write-Host "OK: $Message" -ForegroundColor Green
-}
+Write-Host "🏨 Sistema Hotel - Entorno de Desarrollo" -ForegroundColor Cyan
+Write-Host "================================================" -ForegroundColor Cyan
 
-function Write-Warning {
-    param([string]$Message)
-    Write-Host "WARNING: $Message" -ForegroundColor Yellow
-}
-
-function Write-Error {
-    param([string]$Message)
-    Write-Host "ERROR: $Message" -ForegroundColor Red
-}
-
-# Función para mostrar ayuda
-function Show-Help {
-    Write-Host "Script de desarrollo para el sistema de hotel" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Uso: .\scripts\dev.ps1 [COMANDO]"
-    Write-Host ""
-    Write-Host "Comandos disponibles:"
-    Write-Host "  start          - Iniciar todos los servicios"
-    Write-Host "  stop           - Detener todos los servicios"
-    Write-Host "  restart        - Reiniciar todos los servicios"
-    Write-Host "  build          - Reconstruir imágenes Docker"
-    Write-Host "  logs           - Mostrar logs de los servicios"
-    Write-Host "  shell          - Abrir shell en el contenedor web"
-    Write-Host "  migrate        - Ejecutar migraciones"
-    Write-Host "  collectstatic  - Recolectar archivos estáticos"
-    Write-Host "  superuser      - Crear superusuario"
-    Write-Host "  clean          - Limpiar contenedores y volúmenes"
-    Write-Host "  help           - Mostrar esta ayuda"
-    Write-Host ""
-    Write-Host "Ejemplos:"
-    Write-Host "  .\scripts\dev.ps1 start"
-    Write-Host "  .\scripts\dev.ps1 collectstatic"
-    Write-Host "  .\scripts\dev.ps1 shell"
-}
-
-# Función para iniciar servicios
-function Start-Services {
-    Write-Log "Iniciando servicios..."
-    docker-compose -f docker-compose.dev.yml up -d
-    Write-Success "Servicios iniciados"
-}
-
-# Función para detener servicios
-function Stop-Services {
-    Write-Log "Deteniendo servicios..."
-    docker-compose -f docker-compose.dev.yml down
-    Write-Success "Servicios detenidos"
-}
-
-# Función para reiniciar servicios
-function Restart-Services {
-    Write-Log "Reiniciando servicios..."
-    docker-compose -f docker-compose.dev.yml restart
-    Write-Success "Servicios reiniciados"
-}
-
-# Función para construir imágenes
-function Build-Images {
-    Write-Log "Construyendo imágenes Docker..."
-    docker-compose -f docker-compose.dev.yml build --no-cache
-    Write-Success "Imágenes construidas"
-}
-
-# Función para mostrar logs
-function Show-Logs {
-    Write-Log "Mostrando logs..."
-    docker-compose -f docker-compose.dev.yml logs -f
-}
-
-# Función para abrir shell
-function Open-Shell {
-    Write-Log "Abriendo shell en el contenedor web..."
-    docker-compose -f docker-compose.dev.yml exec web sh
-}
-
-# Función para ejecutar migraciones
-function Run-Migrations {
-    Write-Log "Ejecutando migraciones..."
-    docker-compose -f docker-compose.dev.yml exec web python manage.py migrate
-    Write-Success "Migraciones completadas"
-}
-
-# Función para recolectar archivos estáticos
-function Collect-StaticFiles {
-    Write-Log "Recolectando archivos estáticos..."
-    docker-compose -f docker-compose.dev.yml exec web python manage.py collectstatic --noinput
-    Write-Success "Archivos estáticos recolectados"
-}
-
-# Función para crear superusuario
-function Create-Superuser {
-    Write-Log "Creando superusuario..."
-    docker-compose -f docker-compose.dev.yml exec web python manage.py crear_supervisor
-    Write-Success "Superusuario creado"
-}
-
-# Función para limpiar
-function Clean-All {
-    Write-Warning "Esta acción eliminará todos los contenedores y volúmenes. ¿Estás seguro? (y/N)"
-    $response = Read-Host
-    if ($response -eq "y" -or $response -eq "Y" -or $response -eq "yes" -or $response -eq "YES") {
-        Write-Log "Limpiando contenedores y volúmenes..."
-        docker-compose -f docker-compose.dev.yml down -v --remove-orphans
-        docker system prune -f
-        Write-Success "Limpieza completada"
-    } else {
-        Write-Log "Limpieza cancelada"
-    }
-}
-
-# Función principal
-switch ($Command.ToLower()) {
-    "start" {
-        Start-Services
-    }
-    "stop" {
-        Stop-Services
-    }
-    "restart" {
-        Restart-Services
-    }
-    "build" {
-        Build-Images
-    }
-    "logs" {
-        Show-Logs
-    }
-    "shell" {
-        Open-Shell
-    }
-    "migrate" {
-        Run-Migrations
-    }
-    "collectstatic" {
-        Collect-StaticFiles
-    }
-    "superuser" {
-        Create-Superuser
-    }
-    "clean" {
-        Clean-All
-    }
-    "help" {
-        Show-Help
-    }
-    default {
-        Write-Error "Comando desconocido: $Command"
+switch ($Command) {
+    "up" {
+        Write-Host "🚀 Levantando servicios..." -ForegroundColor Green
+        docker-compose -f $ComposeFile up -d
+        Write-Host "✅ Servicios levantados correctamente" -ForegroundColor Green
         Write-Host ""
-        Show-Help
+        Write-Host "📋 URLs disponibles:" -ForegroundColor Yellow
+        Write-Host "   🌐 Frontend React: http://localhost:3000" -ForegroundColor White
+        Write-Host "   🔧 Backend Django: http://localhost:8000" -ForegroundColor White
+        Write-Host "   🗄️  Base de datos: localhost:5432" -ForegroundColor White
+        Write-Host ""
+        Write-Host "👤 Credenciales de acceso:" -ForegroundColor Yellow
+        Write-Host "   Usuario: admin" -ForegroundColor White
+        Write-Host "   Contraseña: admin123" -ForegroundColor White
+    }
+    
+    "down" {
+        Write-Host "🛑 Deteniendo servicios..." -ForegroundColor Red
+        docker-compose -f $ComposeFile down
+        Write-Host "✅ Servicios detenidos correctamente" -ForegroundColor Green
+    }
+    
+    "restart" {
+        Write-Host "🔄 Reiniciando servicios..." -ForegroundColor Yellow
+        docker-compose -f $ComposeFile restart
+        Write-Host "✅ Servicios reiniciados correctamente" -ForegroundColor Green
+    }
+    
+    "logs" {
+        Write-Host "📋 Mostrando logs..." -ForegroundColor Blue
+        docker-compose -f $ComposeFile logs -f
+    }
+    
+    "build" {
+        Write-Host "🔨 Construyendo imágenes..." -ForegroundColor Magenta
+        docker-compose -f $ComposeFile build --no-cache
+        Write-Host "✅ Imágenes construidas correctamente" -ForegroundColor Green
+    }
+    
+    "status" {
+        Write-Host "📊 Estado de los servicios:" -ForegroundColor Blue
+        docker-compose -f $ComposeFile ps
+        Write-Host ""
+        Write-Host "📋 URLs disponibles:" -ForegroundColor Yellow
+        Write-Host "   🌐 Frontend React: http://localhost:3000" -ForegroundColor White
+        Write-Host "   🔧 Backend Django: http://localhost:8000" -ForegroundColor White
+        Write-Host "   🗄️  Base de datos: localhost:5432" -ForegroundColor White
     }
 }
+
+Write-Host ""
+Write-Host "🛠️  Comandos disponibles:" -ForegroundColor Cyan
+Write-Host "   .\scripts\dev.ps1 up      - Levantar servicios" -ForegroundColor Gray
+Write-Host "   .\scripts\dev.ps1 down    - Detener servicios" -ForegroundColor Gray
+Write-Host "   .\scripts\dev.ps1 restart - Reiniciar servicios" -ForegroundColor Gray
+Write-Host "   .\scripts\dev.ps1 logs    - Ver logs" -ForegroundColor Gray
+Write-Host "   .\scripts\dev.ps1 build   - Construir imágenes" -ForegroundColor Gray
+Write-Host "   .\scripts\dev.ps1 status  - Ver estado" -ForegroundColor Gray

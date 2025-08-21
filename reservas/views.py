@@ -22,6 +22,7 @@ from django.contrib.auth import authenticate, login
 from .forms import UsuarioForm
 from .decorators import supervisor_required
 from .models import PerfilUsuario
+import json
 
 
 def custom_login(request):
@@ -33,7 +34,12 @@ def custom_login(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
+                messages.success(request, f"Bienvenido, {user.username}!")
                 return redirect("home")
+            else:
+                messages.error(request, "Usuario o contraseña incorrectos.")
+        else:
+            messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
         form = AuthenticationForm()
     return render(request, "login.html", {"form": form})
@@ -207,11 +213,16 @@ def editar_habitacion(request, habitacion_id):
     if request.method == "POST":
         form = HabitacionForm(request.POST, instance=habitacion)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Habitación actualizada con éxito.")
-            return redirect(
-                "listar_habitaciones"
-            )  # Redirige a la lista de habitaciones después de guardar
+            try:
+                form.save()
+                messages.success(
+                    request, f"Habitación {habitacion.numero} actualizada exitosamente."
+                )
+                return redirect("listar_habitaciones")
+            except Exception as e:
+                messages.error(request, f"Error al actualizar la habitación: {str(e)}")
+        else:
+            messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
         form = HabitacionForm(instance=habitacion)
 
@@ -225,9 +236,16 @@ def editar_habitacion(request, habitacion_id):
 def eliminar_habitacion(request, habitacion_id):
     habitacion = get_object_or_404(Habitacion, id=habitacion_id)
     if request.method == "POST":
-        habitacion.delete()
-        messages.success(request, "Habitación eliminada con éxito.")
-        return redirect("listar_habitaciones")
+        try:
+            numero_habitacion = habitacion.numero
+            habitacion.delete()
+            messages.success(
+                request, f"Habitación {numero_habitacion} eliminada exitosamente."
+            )
+            return redirect("listar_habitaciones")
+        except Exception as e:
+            messages.error(request, f"Error al eliminar la habitación: {str(e)}")
+            return redirect("listar_habitaciones")
     return render(
         request, "reservas/eliminar_habitacion.html", {"habitacion": habitacion}
     )
@@ -237,8 +255,16 @@ def cargar_habitacion(request):
     if request.method == "POST":
         form = HabitacionForm(request.POST)
         if form.is_valid():
-            form.save()
-            form = HabitacionForm()
+            try:
+                habitacion = form.save()
+                messages.success(
+                    request, f"Habitación {habitacion.numero} creada exitosamente."
+                )
+                form = HabitacionForm()
+            except Exception as e:
+                messages.error(request, f"Error al crear la habitación: {str(e)}")
+        else:
+            messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
         form = HabitacionForm()
     return render(request, "reservas/cargar_habitacion.html", {"form": form})
@@ -248,16 +274,23 @@ def cargar_reserva(request):
     if request.method == "POST":
         form = ReservaForm(request.POST)
         if form.is_valid():
-            reserva = form.save(commit=False)
-            reserva.noches = (reserva.fecha_egreso - reserva.fecha_ingreso).days
-            reserva.precio_por_noche = (
-                reserva.monto_total / reserva.noches if reserva.noches else 0
-            )
-            reserva.resto = reserva.monto_total - reserva.senia
-            reserva.save()
-            return redirect(
-                "listar_reservas"
-            )  # Puedes cambiar esta redirección si es necesario
+            try:
+                reserva = form.save(commit=False)
+                reserva.noches = (reserva.fecha_egreso - reserva.fecha_ingreso).days
+                reserva.precio_por_noche = (
+                    reserva.monto_total / reserva.noches if reserva.noches else 0
+                )
+                reserva.resto = reserva.monto_total - reserva.senia
+                reserva.save()
+                messages.success(
+                    request,
+                    f"Reserva para {reserva.nombre} {reserva.apellido} creada exitosamente.",
+                )
+                return redirect("listar_reservas")
+            except Exception as e:
+                messages.error(request, f"Error al crear la reserva: {str(e)}")
+        else:
+            messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
         form = ReservaForm()
     return render(request, "reservas/cargar_reserva.html", {"form": form})
@@ -458,10 +491,17 @@ def detalle_reserva(request, reserva_id):
 def eliminar_reserva(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
     if request.method == "POST":
-        reserva.delete()
-        messages.success(request, "Reserva eliminada con éxito.")
-        return redirect("listar_reservas")
-    return render(request, "reservas/listar_reservas.html")
+        try:
+            nombre_reserva = f"{reserva.nombre} {reserva.apellido}"
+            reserva.delete()
+            messages.success(
+                request, f"Reserva de {nombre_reserva} eliminada exitosamente."
+            )
+            return redirect("listar_reservas")
+        except Exception as e:
+            messages.error(request, f"Error al eliminar la reserva: {str(e)}")
+            return redirect("listar_reservas")
+    return render(request, "reservas/eliminar_reserva.html", {"reserva": reserva})
 
 
 def listar_reservas(request):
@@ -496,12 +536,21 @@ def listar_reservas(request):
 
 
 def editar_reserva(request, reserva_id):
-    reserva = Reserva.objects.get(id=reserva_id)
+    reserva = get_object_or_404(Reserva, id=reserva_id)
     if request.method == "POST":
         form = ReservaForm(request.POST, instance=reserva)
         if form.is_valid():
-            form.save()
-            return redirect("listar_reservas")
+            try:
+                form.save()
+                messages.success(
+                    request,
+                    f"Reserva de {reserva.nombre} {reserva.apellido} actualizada exitosamente.",
+                )
+                return redirect("listar_reservas")
+            except Exception as e:
+                messages.error(request, f"Error al actualizar la reserva: {str(e)}")
+        else:
+            messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
         form = ReservaForm(instance=reserva)
     return render(request, "reservas/editar_reserva.html", {"form": form})
@@ -513,25 +562,89 @@ def crear_usuario(request):
     if request.method == "POST":
         form = UsuarioForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            try:
+                user = form.save()
 
-            # Crear el perfil del usuario
-            perfil = PerfilUsuario.objects.create(
-                usuario=user,
-                rol=form.cleaned_data["rol"],
-                turno=form.cleaned_data["turno"],
-            )
+                # Crear el perfil del usuario
+                perfil = PerfilUsuario.objects.create(
+                    usuario=user,
+                    rol=form.cleaned_data["rol"],
+                    turno=form.cleaned_data["turno"],
+                )
 
-            messages.success(
-                request,
-                f"Usuario '{user.username}' creado exitosamente como {perfil.get_rol_display()} "
-                f"del turno {perfil.get_turno_display()}. "
-                "El usuario ya puede iniciar sesión en el sistema.",
-            )
-            return redirect("home")
+                messages.success(
+                    request,
+                    f"Usuario '{user.username}' creado exitosamente como {perfil.get_rol_display()} "
+                    f"del turno {perfil.get_turno_display()}. "
+                    "El usuario ya puede iniciar sesión en el sistema.",
+                )
+                return redirect("home")
+            except Exception as e:
+                messages.error(request, f"Error al crear el usuario: {str(e)}")
         else:
             messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
         form = UsuarioForm()
 
     return render(request, "reservas/crear_usuario.html", {"form": form})
+
+
+def test_toastr(request):
+    """Vista para probar las notificaciones Toastr"""
+    # Agregar un mensaje de prueba
+    messages.success(request, "Este es un mensaje de prueba de Django Messages")
+    return render(request, "test_toastr.html")
+
+
+def test_alerts(request):
+    """Vista para probar diferentes tipos de alertas"""
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "success":
+            messages.success(request, "¡Operación completada exitosamente!")
+        elif action == "error":
+            messages.error(request, "¡Error en la operación!")
+        elif action == "warning":
+            messages.warning(request, "¡Advertencia en la operación!")
+        elif action == "info":
+            messages.info(request, "Información importante")
+        return redirect("test_alerts")
+
+    return render(request, "reservas/test_alerts.html")
+
+
+def test_alerts_ajax(request):
+    """Vista para probar alertas con AJAX (sin recargar página)"""
+    if request.method == "POST":
+        action = request.POST.get("action")
+        message = ""
+        message_type = "info"
+
+        if action == "success":
+            message = "¡Operación completada exitosamente!"
+            message_type = "success"
+        elif action == "error":
+            message = "¡Error en la operación!"
+            message_type = "error"
+        elif action == "warning":
+            message = "¡Advertencia en la operación!"
+            message_type = "warning"
+        elif action == "info":
+            message = "Información importante"
+            message_type = "info"
+
+        return JsonResponse(
+            {"status": "success", "message": message, "type": message_type}
+        )
+
+    return render(request, "reservas/test_alerts_ajax.html")
+
+
+def test_simple(request):
+    """Vista para probar alertas de manera simple"""
+    return render(request, "reservas/test_simple.html")
+
+
+def test_minimal(request):
+    """Vista para probar alertas de manera mínima con CDN"""
+    return render(request, "reservas/test_minimal.html")

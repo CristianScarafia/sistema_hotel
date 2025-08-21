@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Toastr{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Test de Notificaciones Toastr</h1>
+    
+    <div class="space-y-4">
+        <button onclick="testSuccess()" class="bg-green-500 text-white px-4 py-2 rounded">
+            Test Success
+        </button>
+        
+        <button onclick="testError()" class="bg-red-500 text-white px-4 py-2 rounded">
+            Test Error
+        </button>
+        
+        <button onclick="testWarning()" class="bg-yellow-500 text-white px-4 py-2 rounded">
+            Test Warning
+        </button>
+        
+        <button onclick="testInfo()" class="bg-blue-500 text-white px-4 py-2 rounded">
+            Test Info
+        </button>
+        
+        <button onclick="testDjangoMessage()" class="bg-purple-500 text-white px-4 py-2 rounded">
+            Test Django Message
+        </button>
+    </div>
+    
+    <div class="mt-8 p-4 bg-gray-100 rounded">
+        <h2 class="text-lg font-semibold mb-2">Información de Debug:</h2>
+        <p><strong>Toastr disponible:</strong> <span id="toastr-status">Verificando...</span></p>
+        <p><strong>Mensajes Django:</strong> {{ messages|length }}</p>
+        <p><strong>Tags de mensajes:</strong> 
+            {% for message in messages %}
+                {{ message.tags }}{% if not forloop.last %}, {% endif %}
+            {% empty %}
+                Ninguno
+            {% endfor %}
+        </p>
+    </div>
+</div>
+
+<script>
+function testSuccess() {
+    if (typeof toastr !== 'undefined') {
+        toastr.success('¡Mensaje de éxito de prueba!');
+    } else {
+        alert('Toastr no está disponible');
+    }
+}
+
+function testError() {
+    if (typeof toastr !== 'undefined') {
+        toastr.error('¡Mensaje de error de prueba!');
+    } else {
+        alert('Toastr no está disponible');
+    }
+}
+
+function testWarning() {
+    if (typeof toastr !== 'undefined') {
+        toastr.warning('¡Mensaje de advertencia de prueba!');
+    } else {
+        alert('Toastr no está disponible');
+    }
+}
+
+function testInfo() {
+    if (typeof toastr !== 'undefined') {
+        toastr.info('¡Mensaje de información de prueba!');
+    } else {
+        alert('Toastr no está disponible');
+    }
+}
+
+function testDjangoMessage() {
+    // Simular un mensaje de Django
+    if (typeof toastr !== 'undefined') {
+        toastr.success('Mensaje simulado de Django');
+    } else {
+        alert('Toastr no está disponible');
+    }
+}
+
+// Verificar si Toastr está disponible
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof toastr !== 'undefined') {
+        document.getElementById('toastr-status').textContent = '✅ Disponible';
+        document.getElementById('toastr-status').style.color = 'green';
+    } else {
+        document.getElementById('toastr-status').textContent = '❌ No disponible';
+        document.getElementById('toastr-status').style.color = 'red';
+    }
+});
+</script>
+{% endblock %}

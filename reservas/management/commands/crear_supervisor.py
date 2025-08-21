@@ -4,29 +4,86 @@ from reservas.models import PerfilUsuario
 
 
 class Command(BaseCommand):
-    help = 'Crea un usuario supervisor inicial'
+    help = "Crea un usuario supervisor inicial"
 
     def add_arguments(self, parser):
-        parser.add_argument('--username', type=str, default='admin', help='Nombre de usuario')
-        parser.add_argument('--email', type=str, default='admin@hotel.com', help='Email del usuario')
-        parser.add_argument('--password', type=str, default='admin123', help='Contraseña del usuario')
-        parser.add_argument('--first_name', type=str, default='Administrador', help='Nombre')
-        parser.add_argument('--last_name', type=str, default='Sistema', help='Apellido')
-        parser.add_argument('--turno', type=str, default='mañana', help='Turno (mañana/tarde/noche)')
+        parser.add_argument(
+            "--username", type=str, default="admin", 
+            help="Nombre de usuario"
+        )
+        parser.add_argument(
+            "--email", type=str, default="admin@hotel.com", 
+            help="Email del usuario"
+        )
+        parser.add_argument(
+            "--password", type=str, default="admin123", 
+            help="Contraseña del usuario"
+        )
+        parser.add_argument(
+            "--first_name", type=str, default="Administrador", 
+            help="Nombre"
+        )
+        parser.add_argument(
+            "--last_name", type=str, default="Sistema", 
+            help="Apellido"
+        )
+        parser.add_argument(
+            "--turno", type=str, default="mañana", 
+            help="Turno (mañana/tarde/noche)"
+        )
 
     def handle(self, *args, **options):
-        username = options['username']
-        email = options['email']
-        password = options['password']
-        first_name = options['first_name']
-        last_name = options['last_name']
-        turno = options['turno']
+        username = options["username"]
+        email = options["email"]
+        password = options["password"]
+        first_name = options["first_name"]
+        last_name = options["last_name"]
+        turno = options["turno"]
 
         # Verificar si el usuario ya existe
         if User.objects.filter(username=username).exists():
-            self.stdout.write(
-                self.style.WARNING(f'El usuario {username} ya existe.')
-            )
+            user = User.objects.get(username=username)
+            # Verificar si ya tiene perfil
+            if PerfilUsuario.objects.filter(usuario=user).exists():
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"El usuario {username} ya existe con perfil completo."
+                    )
+                )
+                return
+            else:
+                # El usuario existe pero no tiene perfil, crearlo
+                perfil = PerfilUsuario.objects.create(
+                    usuario=user, rol="supervisor", turno=turno
+                )
+                mensaje = (
+                    f"Perfil de supervisor creado para usuario existente:\n"
+                    f"  Usuario: {username}\n"
+                    f"  Rol: {perfil.get_rol_display()}\n"
+                    f"  Turno: {perfil.get_turno_display()}"
+                )
+                self.stdout.write(self.style.SUCCESS(mensaje))
+                return
+        else:
+            # El usuario existe y tiene perfil, verificar si es supervisor
+            perfil = user.perfil
+            if not perfil.es_supervisor():
+                # Actualizar el rol a supervisor
+                perfil.rol = "supervisor"
+                perfil.save()
+                mensaje = (
+                    f"Rol actualizado a supervisor para usuario existente:\n"
+                    f"  Usuario: {username}\n"
+                    f"  Rol: {perfil.get_rol_display()}\n"
+                    f"  Turno: {perfil.get_turno_display()}"
+                )
+                self.stdout.write(self.style.SUCCESS(mensaje))
+            else:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"El usuario {username} ya existe con perfil completo."
+                    )
+                )
             return
 
         # Crear el usuario
@@ -37,23 +94,36 @@ class Command(BaseCommand):
             first_name=first_name,
             last_name=last_name,
             is_staff=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         # Crear el perfil de supervisor
         perfil = PerfilUsuario.objects.create(
-            usuario=user,
-            rol='supervisor',
-            turno=turno
+            usuario=user, rol="supervisor", turno=turno
         )
+        
+        # Verificar que el perfil se creó correctamente
+        user.refresh_from_db()
+        if hasattr(user, 'perfil') and user.perfil.es_supervisor():
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "✅ Perfil de supervisor verificado correctamente."
+                )
+            )
+        else:
+            self.stdout.write(
+                self.style.ERROR(
+                    "❌ Error: El perfil no se creó correctamente."
+                )
+            )
 
         self.stdout.write(
             self.style.SUCCESS(
-                f'Usuario supervisor creado exitosamente:\n'
-                f'  Usuario: {username}\n'
-                f'  Contraseña: {password}\n'
-                f'  Rol: {perfil.get_rol_display()}\n'
-                f'  Turno: {perfil.get_turno_display()}\n'
-                f'  Email: {email}'
+                f"Usuario supervisor creado exitosamente:\n"
+                f"  Usuario: {username}\n"
+                f"  Contraseña: {password}\n"
+                f"  Rol: {perfil.get_rol_display()}\n"
+                f"  Turno: {perfil.get_turno_display()}\n"
+                f"  Email: {email}"
             )
         )

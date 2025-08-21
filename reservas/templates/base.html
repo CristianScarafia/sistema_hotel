@@ -7,7 +7,13 @@
     {% load static %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/custom.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/vendor/toastr/toastr.min.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- jQuery (requerido por Toastr) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/vendor/toastr/toastr.min.js' %}"></script>
+    <script src="{% static 'js/confirmations.js' %}"></script>
+    <script src="{% static 'js/alerts.js' %}"></script>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -75,6 +81,24 @@
                             <span>Crear Usuario</span>
                         </a>
                     {% endif %}
+                    <a href="{% url 'test_alerts' %}" class="nav-link">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Test Alertas</span>
+                    </a>
+                    <a href="{% url 'test_alerts_ajax' %}" class="nav-link">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <span>Test Alertas AJAX</span>
+                    </a>
+                    <a href="{% url 'test_simple' %}" class="nav-link">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Test Simple</span>
+                    </a>
                 {% endif %}
             </nav>
             
@@ -112,6 +136,9 @@
         <!-- Contenido principal responsive -->
         <div class="main-content" id="main-content">
             <div class="content-wrapper">
+                <!-- Token CSRF oculto para confirmaciones -->
+                {% csrf_token %}
+                
                 {% block content %}{% endblock %}
             </div>
         </div>
@@ -120,7 +147,7 @@
     <!-- Overlay para móvil -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <script>
+            <script>
         // Funcionalidad del menú móvil
         document.addEventListener('DOMContentLoaded', function() {
             const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
@@ -161,7 +188,67 @@
                     closeSidebarFunc();
                 }
             });
+
+            // Mostrar mensajes de Django usando el sistema de alertas mejorado
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        if (window.HotelAlerts) {
+                            window.HotelAlerts.show("{{ message|escapejs }}", 'success');
+                        } else if (typeof toastr !== 'undefined') {
+                            toastr.success("{{ message|escapejs }}");
+                        }
+                    {% elif message.tags == 'error' %}
+                        if (window.HotelAlerts) {
+                            window.HotelAlerts.show("{{ message|escapejs }}", 'error');
+                        } else if (typeof toastr !== 'undefined') {
+                            toastr.error("{{ message|escapejs }}");
+                        }
+                    {% elif message.tags == 'warning' %}
+                        if (window.HotelAlerts) {
+                            window.HotelAlerts.show("{{ message|escapejs }}", 'warning');
+                        } else if (typeof toastr !== 'undefined') {
+                            toastr.warning("{{ message|escapejs }}");
+                        }
+                    {% elif message.tags == 'info' %}
+                        if (window.HotelAlerts) {
+                            window.HotelAlerts.show("{{ message|escapejs }}", 'info');
+                        } else if (typeof toastr !== 'undefined') {
+                            toastr.info("{{ message|escapejs }}");
+                        }
+                    {% else %}
+                        if (window.HotelAlerts) {
+                            window.HotelAlerts.show("{{ message|escapejs }}", 'info');
+                        } else if (typeof toastr !== 'undefined') {
+                            toastr.info("{{ message|escapejs }}");
+                        }
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
         });
+
+        // Función global para mostrar mensajes con Toastr (compatibilidad)
+        function showToast(message, type = 'info') {
+            if (window.HotelAlerts) {
+                window.HotelAlerts.show(message, type);
+            } else if (typeof toastr !== 'undefined') {
+                switch(type) {
+                    case 'success':
+                        toastr.success(message);
+                        break;
+                    case 'error':
+                        toastr.error(message);
+                        break;
+                    case 'warning':
+                        toastr.warning(message);
+                        break;
+                    case 'info':
+                    default:
+                        toastr.info(message);
+                        break;
+                }
+            }
+        }
     </script>
 
     {% block extra_js %}{% endblock %}

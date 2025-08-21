@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Alertas AJAX{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Test de Alertas AJAX (Sin Recargar Página)</h1>
+    
+    <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+        <h2 class="text-lg font-semibold text-blue-800 mb-2">Instrucciones:</h2>
+        <p class="text-blue-700">Haz clic en los botones para probar alertas con AJAX. Estas alertas NO recargan la página, por lo que deberían aparecer inmediatamente.</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div class="space-y-4">
+            <button onclick="testAjaxAlert('success')" class="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Probar Alerta de Éxito (AJAX)
+            </button>
+            
+            <button onclick="testAjaxAlert('error')" class="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Probar Alerta de Error (AJAX)
+            </button>
+            
+            <button onclick="testAjaxAlert('warning')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg transition-colors">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                Probar Alerta de Advertencia (AJAX)
+            </button>
+            
+            <button onclick="testAjaxAlert('info')" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Probar Alerta de Información (AJAX)
+            </button>
+        </div>
+        
+        <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Información de Debug:</h3>
+            <div class="space-y-2 text-sm">
+                <p><strong>Toastr disponible:</strong> <span id="toastr-status">Verificando...</span></p>
+                <p><strong>HotelAlerts disponible:</strong> <span id="hotelalerts-status">Verificando...</span></p>
+                <p><strong>CSRF Token:</strong> <span id="csrf-status">Verificando...</span></p>
+                <p><strong>Última respuesta AJAX:</strong></p>
+                <pre id="ajax-response" class="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-32">Ninguna</pre>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+        <h3 class="text-lg font-semibold text-yellow-800 mb-2">Diferencias con Test Normal:</h3>
+        <ul class="list-disc list-inside text-yellow-700 space-y-1">
+            <li>Esta página usa AJAX para enviar las peticiones</li>
+            <li>La página NO se recarga después de hacer clic</li>
+            <li>Las alertas deberían aparecer inmediatamente</li>
+            <li>Si esto funciona, el problema está en el flujo de recarga de página</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Verificar disponibilidad de librerías
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar Toastr
+    if (typeof toastr !== 'undefined') {
+        document.getElementById('toastr-status').textContent = '✅ Disponible';
+        document.getElementById('toastr-status').style.color = 'green';
+    } else {
+        document.getElementById('toastr-status').textContent = '❌ No disponible';
+        document.getElementById('toastr-status').style.color = 'red';
+    }
+    
+    // Verificar HotelAlerts
+    if (window.HotelAlerts) {
+        document.getElementById('hotelalerts-status').textContent = '✅ Disponible';
+        document.getElementById('hotelalerts-status').style.color = 'green';
+    } else {
+        document.getElementById('hotelalerts-status').textContent = '❌ No disponible';
+        document.getElementById('hotelalerts-status').style.color = 'red';
+    }
+    
+    // Verificar CSRF Token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        document.getElementById('csrf-status').textContent = '✅ Disponible';
+        document.getElementById('csrf-status').style.color = 'green';
+    } else {
+        document.getElementById('csrf-status').textContent = '❌ No disponible';
+        document.getElementById('csrf-status').style.color = 'red';
+    }
+});
+
+// Función para probar alertas con AJAX
+function testAjaxAlert(action) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Mostrar indicador de carga
+    document.getElementById('ajax-response').textContent = 'Enviando petición...';
+    
+    fetch('/test-alerts-ajax/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: `action=${action}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Mostrar respuesta en debug
+        document.getElementById('ajax-response').textContent = JSON.stringify(data, null, 2);
+        
+        // Mostrar alerta usando el sistema disponible
+        if (window.HotelAlerts) {
+            window.HotelAlerts.show(data.message, data.type);
+        } else if (typeof toastr !== 'undefined') {
+            switch(data.type) {
+                case 'success':
+                    toastr.success(data.message);
+                    break;
+                case 'error':
+                    toastr.error(data.message);
+                    break;
+                case 'warning':
+                    toastr.warning(data.message);
+                    break;
+                case 'info':
+                    toastr.info(data.message);
+                    break;
+            }
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        document.getElementById('ajax-response').textContent = 'Error: ' + error.message;
+        console.error('Error:', error);
+    });
+}
+</script>
+{% endblock %}

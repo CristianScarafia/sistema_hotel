@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Simple{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Test Simple de Alertas</h1>
+    
+    <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+        <h2 class="text-lg font-semibold text-blue-800 mb-2">Test Básico:</h2>
+        <p class="text-blue-700">Esta página prueba las alertas de la manera más simple posible.</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div class="space-y-4">
+            <button onclick="testDirectAlert('success')" class="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors">
+                Test Alerta de Éxito (Directa)
+            </button>
+            
+            <button onclick="testDirectAlert('error')" class="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors">
+                Test Alerta de Error (Directa)
+            </button>
+            
+            <button onclick="testDirectAlert('warning')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg transition-colors">
+                Test Alerta de Advertencia (Directa)
+            </button>
+            
+            <button onclick="testDirectAlert('info')" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">
+                Test Alerta de Información (Directa)
+            </button>
+        </div>
+        
+        <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Estado del Sistema:</h3>
+            <div class="space-y-2 text-sm">
+                <p><strong>Toastr disponible:</strong> <span id="toastr-status">Verificando...</span></p>
+                <p><strong>HotelAlerts disponible:</strong> <span id="hotelalerts-status">Verificando...</span></p>
+                <p><strong>Última acción:</strong> <span id="last-action">Ninguna</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-green-50 border border-green-200 rounded-md p-4">
+        <h3 class="text-lg font-semibold text-green-800 mb-2">Instrucciones:</h3>
+        <ul class="list-disc list-inside text-green-700 space-y-1">
+            <li>Haz clic en cualquier botón para probar las alertas</li>
+            <li>Si las alertas aparecen, el sistema funciona correctamente</li>
+            <li>Si no aparecen, revisa la consola del navegador para errores</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Verificar disponibilidad de librerías
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM cargado');
+    
+    // Verificar Toastr
+    if (typeof toastr !== 'undefined') {
+        document.getElementById('toastr-status').textContent = '✅ Disponible';
+        document.getElementById('toastr-status').style.color = 'green';
+        console.log('Toastr está disponible');
+    } else {
+        document.getElementById('toastr-status').textContent = '❌ No disponible';
+        document.getElementById('toastr-status').style.color = 'red';
+        console.error('Toastr NO está disponible');
+    }
+    
+    // Verificar HotelAlerts
+    if (window.HotelAlerts) {
+        document.getElementById('hotelalerts-status').textContent = '✅ Disponible';
+        document.getElementById('hotelalerts-status').style.color = 'green';
+        console.log('HotelAlerts está disponible');
+    } else {
+        document.getElementById('hotelalerts-status').textContent = '❌ No disponible';
+        document.getElementById('hotelalerts-status').style.color = 'red';
+        console.error('HotelAlerts NO está disponible');
+    }
+});
+
+// Función para probar alertas directamente
+function testDirectAlert(type) {
+    const message = `Esta es una alerta de prueba de tipo: ${type}`;
+    document.getElementById('last-action').textContent = `Mostrando alerta ${type}: ${message}`;
+    
+    console.log(`Intentando mostrar alerta de tipo: ${type}`);
+    
+    // Intentar con HotelAlerts primero
+    if (window.HotelAlerts) {
+        console.log('Usando HotelAlerts');
+        window.HotelAlerts.show(message, type);
+        return;
+    }
+    
+    // Intentar con Toastr
+    if (typeof toastr !== 'undefined') {
+        console.log('Usando Toastr');
+        switch(type) {
+            case 'success':
+                toastr.success(message);
+                break;
+            case 'error':
+                toastr.error(message);
+                break;
+            case 'warning':
+                toastr.warning(message);
+                break;
+            case 'info':
+                toastr.info(message);
+                break;
+        }
+        return;
+    }
+    
+    // Fallback a alert nativo
+    console.log('Usando alert nativo');
+    alert(`${type.toUpperCase()}: ${message}`);
+}
+</script>
+{% endblock %}

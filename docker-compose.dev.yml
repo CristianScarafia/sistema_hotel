@@ -52,6 +52,29 @@ services:
       - hotel_network
     restart: unless-stopped
 
+  # Aplicación React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hotel_frontend_dev
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_API_URL=http://web:8000
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - web
+    networks:
+      - hotel_network
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
 volumes:
   db_data:
     driver: local

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mínimo de Alertas</title>
+    
+    <!-- jQuery desde CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Toastr desde CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .success { background-color: #28a745; color: white; }
+        .error { background-color: #dc3545; color: white; }
+        .warning { background-color: #ffc107; color: black; }
+        .info { background-color: #17a2b8; color: white; }
+        .success:hover { background-color: #218838; }
+        .error:hover { background-color: #c82333; }
+        .warning:hover { background-color: #e0a800; }
+        .info:hover { background-color: #138496; }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-link:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Mínimo de Alertas</h1>
+        
+        <div class="status">
+            <h3>Estado del Sistema:</h3>
+            <p><strong>jQuery:</strong> <span id="jquery-status">Verificando...</span></p>
+            <p><strong>Toastr:</strong> <span id="toastr-status">Verificando...</span></p>
+            <p><strong>Última acción:</strong> <span id="last-action">Ninguna</span></p>
+        </div>
+        
+        <h2>Probar Alertas:</h2>
+        <button class="button success" onclick="testAlert('success')">
+            ✅ Alerta de Éxito
+        </button>
+        <button class="button error" onclick="testAlert('error')">
+            ❌ Alerta de Error
+        </button>
+        <button class="button warning" onclick="testAlert('warning')">
+            ⚠️ Alerta de Advertencia
+        </button>
+        <button class="button info" onclick="testAlert('info')">
+            ℹ️ Alerta de Información
+        </button>
+        
+        <div class="status">
+            <h3>Instrucciones:</h3>
+            <ul>
+                <li>Haz clic en cualquier botón para probar las alertas</li>
+                <li>Las alertas deberían aparecer en la esquina superior derecha</li>
+                <li>Si las alertas aparecen, el sistema funciona correctamente</li>
+                <li>Si no aparecen, revisa la consola del navegador (F12)</li>
+            </ul>
+        </div>
+        
+        <a href="/" class="back-link">← Volver al Sistema</a>
+    </div>
+
+    <script>
+        // Verificar disponibilidad de librerías
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado');
+            
+            // Verificar jQuery
+            if (typeof $ !== 'undefined') {
+                document.getElementById('jquery-status').textContent = '✅ Disponible';
+                document.getElementById('jquery-status').style.color = 'green';
+                console.log('jQuery está disponible');
+            } else {
+                document.getElementById('jquery-status').textContent = '❌ No disponible';
+                document.getElementById('jquery-status').style.color = 'red';
+                console.error('jQuery NO está disponible');
+            }
+            
+            // Verificar Toastr
+            if (typeof toastr !== 'undefined') {
+                document.getElementById('toastr-status').textContent = '✅ Disponible';
+                document.getElementById('toastr-status').style.color = 'green';
+                console.log('Toastr está disponible');
+                
+                // Configurar Toastr
+                toastr.options = {
+                    "closeButton": true,
+                    "debug": false,
+                    "newestOnTop": false,
+                    "progressBar": true,
+                    "positionClass": "toast-top-right",
+                    "preventDuplicates": false,
+                    "onclick": null,
+                    "showDuration": "300",
+                    "hideDuration": "1000",
+                    "timeOut": "5000",
+                    "extendedTimeOut": "1000",
+                    "showEasing": "swing",
+                    "hideEasing": "linear",
+                    "showMethod": "fadeIn",
+                    "hideMethod": "fadeOut"
+                };
+            } else {
+                document.getElementById('toastr-status').textContent = '❌ No disponible';
+                document.getElementById('toastr-status').style.color = 'red';
+                console.error('Toastr NO está disponible');
+            }
+        });
+
+        // Función para probar alertas
+        function testAlert(type) {
+            const messages = {
+                success: '¡Operación completada exitosamente!',
+                error: '¡Error en la operación!',
+                warning: '¡Advertencia en la operación!',
+                info: 'Información importante'
+            };
+            
+            const message = messages[type];
+            document.getElementById('last-action').textContent = `Mostrando alerta ${type}: ${message}`;
+            
+            console.log(`Intentando mostrar alerta de tipo: ${type}`);
+            
+            // Intentar con Toastr
+            if (typeof toastr !== 'undefined') {
+                console.log('Usando Toastr');
+                switch(type) {
+                    case 'success':
+                        toastr.success(message);
+                        break;
+                    case 'error':
+                        toastr.error(message);
+                        break;
+                    case 'warning':
+                        toastr.warning(message);
+                        break;
+                    case 'info':
+                        toastr.info(message);
+                        break;
+                }
+            } else {
+                console.log('Toastr no disponible, usando alert nativo');
+                alert(`${type.toUpperCase()}: ${message}`);
+            }
+        }
+    </script>
+</body>
+</html>

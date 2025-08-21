@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: hotel_db
+      POSTGRES_USER: hotel_user
+      POSTGRES_PASSWORD: hotel_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - hotel_network
+
+  # Backend Django
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=myproject.settings.development
+      - DATABASE_URL=postgresql://hotel_user:hotel_password@db:5432/hotel_db
+    depends_on:
+      - db
+    networks:
+      - hotel_network
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_API_URL=http://localhost:8000/api
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - web
+    networks:
+      - hotel_network
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
+  static_volume:
+
+networks:
+  hotel_network:
+    driver: bridge

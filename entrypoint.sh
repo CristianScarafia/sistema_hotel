@@ -73,12 +73,10 @@ collect_static() {
 
 # Función para crear superusuario si no existe
 create_superuser() {
-    if [ "${CREATE_SUPERUSER:-false}" = "true" ]; then
-        log "Creando superusuario..."
-        python manage.py crear_supervisor || {
-            log "WARNING: Fallo al crear superusuario"
-        }
-    fi
+    log "Verificando si existe superusuario..."
+    python manage.py crear_supervisor || {
+        log "WARNING: Fallo al crear superusuario"
+    }
 }
 
 # Función principal
