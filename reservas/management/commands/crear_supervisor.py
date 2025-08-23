@@ -65,25 +65,17 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(mensaje))
                 return
         else:
-            # El usuario existe y tiene perfil, verificar si es supervisor
-            perfil = user.perfil
-            if not perfil.es_supervisor():
-                # Actualizar el rol a supervisor
-                perfil.rol = "supervisor"
-                perfil.save()
-                mensaje = (
-                    f"Rol actualizado a supervisor para usuario existente:\n"
-                    f"  Usuario: {username}\n"
-                    f"  Rol: {perfil.get_rol_display()}\n"
-                    f"  Turno: {perfil.get_turno_display()}"
-                )
-                self.stdout.write(self.style.SUCCESS(mensaje))
-            else:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"El usuario {username} ya existe con perfil completo."
-                    )
-                )
+            # El usuario existe pero no tiene perfil, crearlo
+            perfil = PerfilUsuario.objects.create(
+                usuario=user, rol="supervisor", turno=turno
+            )
+            mensaje = (
+                f"Perfil de supervisor creado para usuario existente:\n"
+                f"  Usuario: {username}\n"
+                f"  Rol: {perfil.get_rol_display()}\n"
+                f"  Turno: {perfil.get_turno_display()}"
+            )
+            self.stdout.write(self.style.SUCCESS(mensaje))
             return
 
         # Crear el usuario
