@@ -1,31 +1,15 @@
-# Build stage
-FROM node:18-alpine AS build
-
+# Build
+FROM node:20-alpine AS build
 WORKDIR /app
-
-# Copiar package.json y package-lock.json
 COPY package*.json ./
-
-# Instalar dependencias
-RUN npm ci --only=production
-
-# Copiar el resto del código
+RUN npm ci
 COPY . .
-
-# Build de producción
 RUN npm run build
 
-# Production stage
+# Runtime
 FROM nginx:alpine
-
-# Copiar archivos buildados
+RUN apk add --no-cache gettext
 COPY --from=build /app/build /usr/share/nginx/html
-
-# Copiar configuración de nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Exponer puerto
-EXPOSE 80
-
-# Comando para producción
-CMD ["nginx", "-g", "daemon off;"]
+COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
+ENV PORT=8080
+CMD ["sh","-c","envsubst '$PORT' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
