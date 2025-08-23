@@ -83,6 +83,12 @@ main() {
         log "WARNING: Problemas detectados en la configuración"
     }
     
+    # Ejecutar diagnóstico completo
+    log "Ejecutando diagnóstico completo..."
+    python debug-django.py || {
+        log "WARNING: Problemas detectados en el diagnóstico"
+    }
+    
     # Verificar conexión a base de datos
     check_db_connection
     

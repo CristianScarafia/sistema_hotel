@@ -42,7 +42,7 @@ def custom_login(request):
             messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
         form = AuthenticationForm()
-    return render(request, "login.html", {"form": form})
+    return render(request, "registration/login.html", {"form": form})
 
 
 def get_dollar_rate():

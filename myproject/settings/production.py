@@ -8,9 +8,12 @@ from ..logging import *
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-CSRF_TRUSTED_ORIGINS = ["https://hotelbermudas.up.railway.app"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://hotelbermudas.up.railway.app",
+    "https://sistemahotel-production-5a7f.up.railway.app",
+]
 
 
 ALLOWED_HOSTS = ["*"]
@@ -57,6 +60,10 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+        },
         "file": {
             "level": "ERROR",
             "class": "logging.FileHandler",
@@ -65,9 +72,14 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["file"],
-            "level": "ERROR",
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
             "propagate": True,
+        },
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
         },
     },
 }
