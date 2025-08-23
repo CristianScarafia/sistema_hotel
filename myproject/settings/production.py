@@ -16,19 +16,28 @@ CSRF_TRUSTED_ORIGINS = ["https://hotelbermudas.up.railway.app"]
 
 ALLOWED_HOSTS = ["*"]
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("PGDATABASE") or os.getenv("POSTGRES_DB"),
-        "USER": os.getenv("PGUSER") or os.getenv("POSTGRES_USER"),
-        "PASSWORD": os.getenv("PGPASSWORD") or os.getenv("POSTGRES_PASSWORD"),
-        "HOST": os.getenv("PGHOST") or os.getenv("POSTGRES_HOST"),
-        "PORT": os.getenv("PGPORT") or os.getenv("POSTGRES_PORT"),
-        "OPTIONS": {
-            "client_encoding": "UTF8",
-        },
+# Configuración de base de datos usando DATABASE_URL
+import dj_database_url
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    # Usar DATABASE_URL de Railway
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
+else:
+    # Fallback a configuración manual de PostgreSQL
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("PGDATABASE") or os.getenv("POSTGRES_DB"),
+            "USER": os.getenv("PGUSER") or os.getenv("POSTGRES_USER"),
+            "PASSWORD": os.getenv("PGPASSWORD") or os.getenv("POSTGRES_PASSWORD"),
+            "HOST": os.getenv("PGHOST") or os.getenv("POSTGRES_HOST"),
+            "PORT": os.getenv("PGPORT") or os.getenv("POSTGRES_PORT"),
+            "OPTIONS": {
+                "client_encoding": "UTF8",
+            },
+        }
     }
-}
 """
 DATABASES = {
     'default': {
