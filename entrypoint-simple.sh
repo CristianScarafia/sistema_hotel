@@ -24,6 +24,12 @@ main() {
         log "WARNING: Problemas detectados en la configuración"
     }
     
+    # Verificar conexión a base de datos
+    log "Verificando conexión a base de datos..."
+    python diagnose-postgres.py || {
+        log "WARNING: Problemas con la base de datos - continuando"
+    }
+    
     # Ejecutar migraciones
     log "Ejecutando migraciones..."
     python manage.py migrate || {

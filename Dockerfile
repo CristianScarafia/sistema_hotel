@@ -62,7 +62,7 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD python manage.py check || exit 1
 
 # Comando por defecto
-CMD ["sh", "entrypoint-railway.sh"]
+CMD ["sh", "entrypoint-railway-final.sh"]
 
 
  
