@@ -80,8 +80,11 @@ main() {
         log "WARNING: Problemas detectados en la configuración"
     }
     
-    # Esperar conexión a base de datos
-    wait_for_db
+    # Verificar conexión a base de datos
+    log "Verificando conexión a base de datos..."
+    python test-db-connection.py || {
+        log "WARNING: Problemas con la base de datos - continuando"
+    }
     
     # Ejecutar migraciones
     run_migrations

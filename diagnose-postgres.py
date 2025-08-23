@@ -51,34 +51,66 @@ def check_network_connectivity():
     """Verificar conectividad de red"""
     log("\n=== VERIFICANDO CONECTIVIDAD DE RED ===")
 
-    host = os.getenv("PGHOST")
-    port = int(os.getenv("PGPORT", "5432"))
+    # Verificar si tenemos DATABASE_URL
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        # Parsear la URL para obtener host y puerto
+        try:
+            from urllib.parse import urlparse
 
-    if not host:
-        log("❌ PGHOST no está configurado")
-        return False
+            parsed = urlparse(database_url)
+            host = parsed.hostname
+            port = parsed.port or 5432
+            log(f"Intentando conectar a {host}:{port}")
 
-    log(f"Intentando conectar a {host}:{port}")
+            # Crear socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(10)
 
-    try:
-        # Crear socket
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(10)
+            # Intentar conexión
+            result = sock.connect_ex((host, port))
+            sock.close()
 
-        # Intentar conexión
-        result = sock.connect_ex((host, port))
-        sock.close()
+            if result == 0:
+                log("✅ Conexión de red exitosa")
+                return True
+            else:
+                log(f"❌ Conexión de red falló (código: {result})")
+                return False
 
-        if result == 0:
-            log("✅ Conexión de red exitosa")
-            return True
-        else:
-            log(f"❌ Conexión de red falló (código: {result})")
+        except Exception as e:
+            log(f"❌ Error parseando DATABASE_URL: {e}")
+            return False
+    else:
+        # Fallback a variables individuales
+        host = os.getenv("PGHOST")
+        port = int(os.getenv("PGPORT", "5432"))
+
+        if not host:
+            log("❌ PGHOST no está configurado")
             return False
 
-    except Exception as e:
-        log(f"❌ Error de conectividad: {e}")
-        return False
+        log(f"Intentando conectar a {host}:{port}")
+
+        try:
+            # Crear socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(10)
+
+            # Intentar conexión
+            result = sock.connect_ex((host, port))
+            sock.close()
+
+            if result == 0:
+                log("✅ Conexión de red exitosa")
+                return True
+            else:
+                log(f"❌ Conexión de red falló (código: {result})")
+                return False
+
+        except Exception as e:
+            log(f"❌ Error de conectividad: {e}")
+            return False
 
 
 def check_postgresql_connection():
