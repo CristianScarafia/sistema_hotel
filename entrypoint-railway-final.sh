@@ -10,35 +10,21 @@ log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
 }
 
-# Función para esperar la base de datos usando DATABASE_URL
-wait_for_db() {
-    log "Esperando conexión a base de datos..."
+# Función para verificar conexión a la base de datos
+check_db_connection() {
+    log "Verificando conexión a la base de datos..."
     
-    # Verificar si tenemos DATABASE_URL
-    if [ -z "$DATABASE_URL" ]; then
-        log "❌ ERROR: DATABASE_URL no está configurada"
-        log "   Configura la variable DATABASE_URL en Railway"
+    # Mostrar configuración actual
+    log "Configuración DB: Host=${PGHOST:-NO CONFIGURADO}, Port=${PGPORT:-5432}, Database=${PGDATABASE:-NO CONFIGURADO}, User=${PGUSER:-NO CONFIGURADO}"
+    
+    # Intentar conexión usando nuestro script simple
+    if python test-db-connection.py; then
+        log "✅ Conexión a PostgreSQL exitosa"
+        return 0
+    else
+        log "⚠️ Problemas con la conexión a PostgreSQL - continuando"
         return 1
     fi
-    
-    log "✓ DATABASE_URL configurada: ${DATABASE_URL:0:20}...${DATABASE_URL: -20}"
-    
-    # Intentar conexión usando el script de diagnóstico
-    for i in $(seq 1 10); do
-        log "⏳ Intento $i/10: Verificando conexión a PostgreSQL..."
-        
-        if python diagnose-postgres.py > /dev/null 2>&1; then
-            log "✅ Conexión a PostgreSQL exitosa"
-            return 0
-        else
-            log "⏳ Base de datos no disponible, esperando 3 segundos..."
-            sleep 3
-        fi
-    done
-    
-    log "❌ No se pudo conectar a la base de datos después de 10 intentos"
-    log "⚠️ Continuando sin conexión a base de datos..."
-    return 1
 }
 
 # Función para ejecutar migraciones
@@ -66,6 +52,23 @@ create_superuser() {
     }
 }
 
+# Función para verificar que Gunicorn esté funcionando
+wait_for_gunicorn() {
+    log "Esperando a que Gunicorn esté funcionando..."
+    
+    for i in $(seq 1 30); do
+        if curl -f http://localhost:8000/health/ > /dev/null 2>&1; then
+            log "✅ Gunicorn está funcionando correctamente"
+            return 0
+        fi
+        log "⏳ Intento $i/30: Gunicorn no está listo, esperando 2 segundos..."
+        sleep 2
+    done
+    
+    log "❌ Gunicorn no se pudo verificar después de 30 intentos"
+    return 1
+}
+
 # Función principal
 main() {
     log "Iniciando aplicación Django en Railway (configuración final)..."
@@ -81,10 +84,7 @@ main() {
     }
     
     # Verificar conexión a base de datos
-    log "Verificando conexión a base de datos..."
-    python test-db-connection.py || {
-        log "WARNING: Problemas con la base de datos - continuando"
-    }
+    check_db_connection
     
     # Ejecutar migraciones
     run_migrations
@@ -95,9 +95,9 @@ main() {
     # Crear superusuario
     create_superuser
     
-    # Iniciar servidor
+    # Iniciar servidor en background
     log "Iniciando servidor Gunicorn..."
-    exec gunicorn myproject.wsgi:application \
+    gunicorn myproject.wsgi:application \
         --bind 0.0.0.0:8000 \
         --workers ${GUNICORN_WORKERS:-2} \
         --worker-class ${GUNICORN_WORKER_CLASS:-sync} \
@@ -106,7 +106,16 @@ main() {
         --access-logfile - \
         --error-logfile - \
         --log-level ${GUNICORN_LOG_LEVEL:-info} \
-        --preload
+        --preload &
+    
+    GUNICORN_PID=$!
+    
+    # Esperar a que Gunicorn esté funcionando
+    wait_for_gunicorn
+    
+    # Mantener el proceso activo
+    log "✅ Servicio iniciado correctamente. PID: $GUNICORN_PID"
+    wait $GUNICORN_PID
 }
 
 # Ejecutar función principal
