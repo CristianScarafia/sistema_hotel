@@ -10,44 +10,21 @@ log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
 }
 
-# Función para esperar la base de datos (optimizada para Railway)
-wait_for_db() {
-    log "Esperando conexión a la base de datos..."
+# Función para verificar conexión a la base de datos
+check_db_connection() {
+    log "Verificando conexión a la base de datos..."
     
-    # En Railway, las variables de entorno de PostgreSQL vienen con prefijo PG
-    DB_HOST="${PGHOST:-${POSTGRES_HOST:-localhost}}"
-    DB_PORT="${PGPORT:-${POSTGRES_PORT:-5432}}"
-    DB_NAME="${PGDATABASE:-${POSTGRES_DB:-hotel_db}}"
-    DB_USER="${PGUSER:-${POSTGRES_USER:-postgres}}"
-    DB_PASSWORD="${PGPASSWORD:-${POSTGRES_PASSWORD:-}}"
+    # Mostrar configuración actual
+    log "Configuración DB: Host=${PGHOST:-NO CONFIGURADO}, Port=${PGPORT:-5432}, Database=${PGDATABASE:-NO CONFIGURADO}, User=${PGUSER:-NO CONFIGURADO}"
     
-    log "Configuración DB: Host=$DB_HOST, Port=$DB_PORT, Database=$DB_NAME, User=$DB_USER"
-    
-    python - <<'PY'
-import os
-import time
-import socket
-import sys
-
-host = os.environ.get('DB_HOST', 'localhost')
-port = int(os.environ.get('DB_PORT', '5432'))
-max_retries = int(os.environ.get('DB_MAX_RETRIES', '30'))
-
-for attempt in range(max_retries):
-    try:
-        with socket.create_connection((host, port), timeout=5):
-            print(f"✓ Base de datos disponible en {host}:{port}")
-            break
-    except OSError as e:
-        if attempt == max_retries - 1:
-            print(f"✗ No se pudo conectar a la base de datos después de {max_retries} intentos")
-            print(f"Error: {e}")
-            # En Railway, continuar sin base de datos por ahora
-            print("⚠️ Continuando sin conexión a base de datos...")
-            break
-        print(f"⏳ Intento {attempt + 1}/{max_retries}: Base de datos no disponible, esperando...")
-        time.sleep(2)
-PY
+    # Intentar conexión usando nuestro script simple
+    if python test-db-connection.py; then
+        log "✅ Conexión a PostgreSQL exitosa"
+        return 0
+    else
+        log "⚠️ Problemas con la conexión a PostgreSQL - continuando"
+        return 1
+    fi
 }
 
 # Función para ejecutar migraciones
@@ -100,8 +77,8 @@ main() {
     log "DJANGO_SETTINGS_MODULE: $DJANGO_SETTINGS_MODULE"
     log "PYTHONUNBUFFERED: $PYTHONUNBUFFERED"
     
-    # Esperar base de datos (pero no fallar si no está disponible)
-    wait_for_db
+    # Verificar conexión a base de datos
+    check_db_connection
     
     # Verificar configuración primero
     check_config

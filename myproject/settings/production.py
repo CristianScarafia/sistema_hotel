@@ -1,9 +1,8 @@
 from .base import *
 import os
-from dotenv import load_dotenv
 from ..logging import *
 
-load_dotenv(Path.joinpath(BASE_DIR, ".env"))
+# NO cargar archivo .env en producción - usar solo variables de entorno de Railway
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("SECRET_KEY")

@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.development
+.env.production
+*.env
 *.log
 *.pyc
 __pycache__/
