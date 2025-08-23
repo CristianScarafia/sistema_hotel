@@ -153,7 +153,7 @@ const Planning = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">
                   Habitación
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[100px] bg-gray-50 z-10">
                   Tipo
                 </th>
                 {planningData.days.map((day, index) => (
@@ -172,7 +172,7 @@ const Planning = () => {
                       <span>{item.habitacion.numero}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap sticky left-[100px] bg-white z-10">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTipoColor(item.habitacion.tipo)}`}>
                       {item.habitacion.tipo}
                     </span>

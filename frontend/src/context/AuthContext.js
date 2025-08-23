@@ -47,13 +47,35 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
+      console.log('=== CHECKING AUTH STATUS ===');
       const response = await api.get('/api/auth/');
-      setUser(response.data);
+      console.log('Auth response:', response.data);
+      // Obtener información del perfil del usuario
+      const userWithProfile = await getUserProfile(response.data);
+      console.log('User with profile:', userWithProfile);
+      setUser(userWithProfile);
     } catch (error) {
       console.error('Error checking auth status:', error);
+      console.error('Error details:', error.response?.data);
       setUser(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getUserProfile = async (userData) => {
+    try {
+      const profileResponse = await api.get('/api/perfiles/mi-perfil/');
+      return {
+        ...userData,
+        perfil: profileResponse.data
+      };
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      return {
+        ...userData,
+        perfil: { rol: 'conserge', turno: 'mañana' }
+      };
     }
   };
 
@@ -62,7 +84,9 @@ export const AuthProvider = ({ children }) => {
       console.log('Attempting login with:', credentials);
       const response = await api.post('/api/auth/', credentials);
       console.log('Login response:', response.data);
-      setUser(response.data.user);
+      // Obtener información del perfil del usuario
+      const userWithProfile = await getUserProfile(response.data.user);
+      setUser(userWithProfile);
       return { success: true };
     } catch (error) {
       console.error('Login error:', error.response?.data || error);

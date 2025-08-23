@@ -72,12 +72,52 @@ class HabitacionViewSet(viewsets.ModelViewSet):
 
     queryset = Habitacion.objects.all()
     serializer_class = HabitacionSerializer
-    permission_classes = [permissions.AllowAny]  # Permitir acceso sin autenticación
+    permission_classes = [permissions.IsAuthenticated]  # Requerir autenticación
 
     def get_serializer_class(self):
         if self.action == "list":
             return HabitacionListSerializer
         return HabitacionSerializer
+
+    def create(self, request, *args, **kwargs):
+        """Crear habitación - solo supervisores"""
+        if not self._is_supervisor(request.user):
+            return Response(
+                {
+                    "error": "Acceso denegado. Solo los supervisores pueden crear habitaciones."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """Actualizar habitación - solo supervisores"""
+        if not self._is_supervisor(request.user):
+            return Response(
+                {
+                    "error": "Acceso denegado. Solo los supervisores pueden editar habitaciones."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Eliminar habitación - solo supervisores"""
+        if not self._is_supervisor(request.user):
+            return Response(
+                {
+                    "error": "Acceso denegado. Solo los supervisores pueden eliminar habitaciones."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    def _is_supervisor(self, user):
+        """Verificar si el usuario es supervisor"""
+        try:
+            return user.perfil.rol == "supervisor"
+        except:
+            return False
 
     @action(detail=False, methods=["get"])
     def disponibles(self, request):
@@ -113,7 +153,7 @@ class ReservaViewSet(viewsets.ModelViewSet):
 
     queryset = Reserva.objects.all().order_by("-id")
     serializer_class = ReservaSerializer
-    permission_classes = [permissions.AllowAny]  # Cambiar temporalmente para permitir acceso sin autenticación
+    permission_classes = [permissions.IsAuthenticated]  # Requerir autenticación
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -121,6 +161,35 @@ class ReservaViewSet(viewsets.ModelViewSet):
         elif self.action == "create":
             return ReservaCreateSerializer
         return ReservaSerializer
+
+    def update(self, request, *args, **kwargs):
+        """Actualizar reserva - solo supervisores"""
+        if not self._is_supervisor(request.user):
+            return Response(
+                {
+                    "error": "Acceso denegado. Solo los supervisores pueden editar reservas."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Eliminar reserva - solo supervisores"""
+        if not self._is_supervisor(request.user):
+            return Response(
+                {
+                    "error": "Acceso denegado. Solo los supervisores pueden eliminar reservas."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    def _is_supervisor(self, user):
+        """Verificar si el usuario es supervisor"""
+        try:
+            return user.perfil.rol == "supervisor"
+        except:
+            return False
 
     @action(detail=False, methods=["get"])
     def hoy(self, request):
@@ -149,6 +218,16 @@ class ReservaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def por_fecha(self, request):
         """Obtener reservas por fecha específica"""
+        # Debug: verificar autenticación
+        print(f"=== DEBUG POR_FECHA ===")
+        print(f"Usuario autenticado: {request.user.is_authenticated}")
+        print(f"Usuario: {request.user}")
+        print(f"Headers: {dict(request.headers)}")
+
+        # Temporalmente permitir acceso sin autenticación para pruebas
+        if not request.user.is_authenticated:
+            print("Usuario no autenticado, pero continuando para pruebas...")
+
         fecha_str = request.query_params.get("fecha")
         if not fecha_str:
             return Response(
@@ -160,9 +239,33 @@ class ReservaViewSet(viewsets.ModelViewSet):
             fecha = date.fromisoformat(fecha_str)
             reservas = Reserva.objects.filter(
                 Q(fecha_ingreso__lte=fecha) & Q(fecha_egreso__gt=fecha)
+            ).select_related(
+                "nhabitacion"
+            )  # Optimizar consulta
+
+            # Calcular total de personas para el día actual
+            total_personas_actual = (
+                reservas.aggregate(total=Sum("personas"))["total"] or 0
             )
-            serializer = self.get_serializer(reservas, many=True)
-            return Response(serializer.data)
+
+            # Cálculo de medialunas para el día siguiente basado en las personas del día actual
+            medialunas_necesarias = (total_personas_actual * 2.5) / 12
+            docenas_medialunas = round(medialunas_necesarias, 1)
+            fecha_siguiente = fecha + timedelta(days=1)
+
+            serializer = ReservaListSerializer(reservas, many=True)
+            return Response(
+                {
+                    "reservas": serializer.data,
+                    "medialunas": {
+                        "fecha_siguiente": fecha_siguiente.isoformat(),
+                        "total_personas": total_personas_actual,
+                        "docenas_necesarias": docenas_medialunas,
+                        "medialunas_totales": round(total_personas_actual * 2.5, 0),
+                    },
+                    "total_personas_actual": total_personas_actual,
+                }
+            )
         except ValueError:
             return Response(
                 {"error": "Formato de fecha inválido (YYYY-MM-DD)"},
@@ -188,6 +291,105 @@ class ReservaViewSet(viewsets.ModelViewSet):
                 {"error": "ID de habitación inválido"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+    @action(detail=False, methods=["get"])
+    def limpieza(self, request):
+        """Obtener datos de limpieza para una fecha específica"""
+        # Debug: verificar autenticación
+        print(f"=== DEBUG LIMPIEZA ===")
+        print(f"Usuario autenticado: {request.user.is_authenticated}")
+        print(f"Usuario: {request.user}")
+        print(f"Headers: {dict(request.headers)}")
+
+        # Temporalmente permitir acceso sin autenticación para pruebas
+        if not request.user.is_authenticated:
+            print("Usuario no autenticado, pero continuando para pruebas...")
+
+        fecha_str = request.GET.get("fecha")
+
+        if not fecha_str:
+            fecha_str = date.today().isoformat()
+
+        try:
+            fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+        except ValueError:
+            fecha = date.today()
+
+        # Obtener todas las habitaciones
+        habitaciones = Habitacion.objects.all()
+
+        # Obtener reservas activas para la fecha
+        reservas_activas = Reserva.objects.filter(
+            fecha_ingreso__lte=fecha, fecha_egreso__gt=fecha
+        ).select_related("nhabitacion")
+
+        # Habitaciones ocupadas
+        habitaciones_ocupadas = set(
+            reservas_activas.values_list("nhabitacion_id", flat=True)
+        )
+
+        # Habitaciones a limpiar (se fueron los pasajeros)
+        a_limpiar = []
+        # Habitaciones a pasajero (está el pasajero pero hay que repasar)
+        a_pasajero = []
+        # Habitaciones a limpiar + pasajero (4ª noche, tiene al menos 1 noche más)
+        a_limpiar_pasajero = []
+
+        for habitacion in habitaciones:
+            if habitacion.id in habitaciones_ocupadas:
+                # Buscar la reserva activa para esta habitación
+                reserva = reservas_activas.filter(nhabitacion=habitacion).first()
+
+                if reserva:
+                    # Calcular noches de estadía hasta la fecha
+                    noches_estadia = (fecha - reserva.fecha_ingreso).days
+
+                    # Si es la 4ª noche o más y tiene al menos 1 noche más
+                    if (
+                        noches_estadia >= 3
+                        and reserva.fecha_egreso > fecha + timedelta(days=1)
+                    ):
+                        a_limpiar_pasajero.append(
+                            {
+                                "id": habitacion.id,
+                                "numero": habitacion.numero,
+                                "tipo": habitacion.tipo,
+                                "noches_estadia": noches_estadia + 1,
+                            }
+                        )
+                    else:
+                        # Repaso normal
+                        a_pasajero.append(
+                            {
+                                "id": habitacion.id,
+                                "numero": habitacion.numero,
+                                "tipo": habitacion.tipo,
+                                "noches_estadia": noches_estadia + 1,
+                            }
+                        )
+            else:
+                # Habitación disponible - verificar si se fue alguien ayer
+                reserva_ayer = Reserva.objects.filter(
+                    nhabitacion=habitacion, fecha_egreso=fecha
+                ).first()
+
+                if reserva_ayer:
+                    a_limpiar.append(
+                        {
+                            "id": habitacion.id,
+                            "numero": habitacion.numero,
+                            "tipo": habitacion.tipo,
+                        }
+                    )
+
+        return Response(
+            {
+                "a_limpiar": a_limpiar,
+                "a_pasajero": a_pasajero,
+                "a_limpiar_pasajero": a_limpiar_pasajero,
+                "fecha": fecha.isoformat(),
+            }
+        )
 
 
 class EstadisticasView(APIView):
@@ -290,11 +492,12 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     """ViewSet para el modelo User"""
 
     from django.contrib.auth.models import User
+
     queryset = User.objects.all()
-    permission_classes = [permissions.AllowAny]  # Permitir acceso sin autenticación
+    permission_classes = [permissions.IsAuthenticated]  # Requerir autenticación
 
     def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
+        if self.action in ["create", "update", "partial_update"]:
             return UserCreateUpdateSerializer
         elif self.action == "list":
             return UsuarioListSerializer
@@ -302,15 +505,64 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         """Listar usuarios con logs de depuración"""
+        # Verificar si el usuario es supervisor
+        if not self._is_supervisor(request.user):
+            return Response(
+                {
+                    "error": "Acceso denegado. Solo los supervisores pueden ver usuarios."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         print("=== LISTANDO USUARIOS ===")
         queryset = self.get_queryset()
         print(f"Queryset: {queryset}")
         print(f"Cantidad de usuarios: {queryset.count()}")
-        
+
         serializer = self.get_serializer(queryset, many=True)
         print(f"Datos serializados: {serializer.data}")
-        
+
         return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        """Crear usuario - solo supervisores"""
+        if not self._is_supervisor(request.user):
+            return Response(
+                {
+                    "error": "Acceso denegado. Solo los supervisores pueden crear usuarios."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """Actualizar usuario - solo supervisores"""
+        if not self._is_supervisor(request.user):
+            return Response(
+                {
+                    "error": "Acceso denegado. Solo los supervisores pueden editar usuarios."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Eliminar usuario - solo supervisores"""
+        if not self._is_supervisor(request.user):
+            return Response(
+                {
+                    "error": "Acceso denegado. Solo los supervisores pueden eliminar usuarios."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    def _is_supervisor(self, user):
+        """Verificar si el usuario es supervisor"""
+        try:
+            return user.perfil.rol == "supervisor"
+        except:
+            return False
 
     def perform_create(self, serializer):
         """Crear usuario con contraseña encriptada"""
@@ -325,17 +577,17 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         return user
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class PlanningViewSet(viewsets.ViewSet):
     """ViewSet para el planning de reservas"""
-    
+
     permission_classes = [permissions.AllowAny]  # Permitir acceso sin autenticación
-    
-    @action(detail=False, methods=['get'])
+
+    @action(detail=False, methods=["get"])
     def planning(self, request):
         """Obtener datos del planning de reservas"""
         start_date_str = request.GET.get("start_date")
-        
+
         if start_date_str:
             try:
                 first_day = datetime.strptime(start_date_str, "%Y-%m-%d").date()
@@ -343,36 +595,39 @@ class PlanningViewSet(viewsets.ViewSet):
                 first_day = date.today().replace(day=1)
         else:
             first_day = date.today().replace(day=1)
-        
+
         # Generar 60 días desde la fecha de inicio
         days = [first_day + timedelta(days=i) for i in range(60)]
-        
+
         # Obtener todas las habitaciones ordenadas por tipo
         habitaciones = list(Habitacion.objects.all())
         tipo_orden = {"doble": 1, "triple": 2, "cuadruple": 3, "quintuple": 4}
         habitaciones.sort(key=lambda x: tipo_orden.get(x.tipo, 5))
-        
+
         # Obtener reservas que se superponen con el período
         reservas = Reserva.objects.filter(
-            fecha_ingreso__lte=days[-1], 
-            fecha_egreso__gte=days[0]
+            fecha_ingreso__lte=days[-1], fecha_egreso__gte=days[0]
         ).select_related("nhabitacion")
-        
+
         planning_data = []
         for habitacion in habitaciones:
             ocupaciones = []
             nombre_mostrado = set()
             reservas_habitacion = reservas.filter(nhabitacion=habitacion)
-            
+
             for day in days:
                 ocupacion = None
                 for reserva in reservas_habitacion:
                     if reserva.fecha_ingreso <= day < reserva.fecha_egreso:
-                        if (day == reserva.fecha_ingreso and reserva.id not in nombre_mostrado):
+                        if (
+                            day == reserva.fecha_ingreso
+                            and reserva.id not in nombre_mostrado
+                        ):
                             nombre_mostrado.add(reserva.id)
                             ocupacion = {
                                 "is_occupied": True,
-                                "is_last_night": day == reserva.fecha_egreso - timedelta(days=1),
+                                "is_last_night": day
+                                == reserva.fecha_egreso - timedelta(days=1),
                                 "nombre": reserva.nombre,
                                 "reserva_id": reserva.id,
                                 "fecha_ingreso": reserva.fecha_ingreso.isoformat(),
@@ -381,14 +636,15 @@ class PlanningViewSet(viewsets.ViewSet):
                         else:
                             ocupacion = {
                                 "is_occupied": True,
-                                "is_last_night": day == reserva.fecha_egreso - timedelta(days=1),
+                                "is_last_night": day
+                                == reserva.fecha_egreso - timedelta(days=1),
                                 "nombre": None,
                                 "reserva_id": reserva.id,
                                 "fecha_ingreso": reserva.fecha_ingreso.isoformat(),
                                 "fecha_egreso": reserva.fecha_egreso.isoformat(),
                             }
                         break
-                
+
                 if not ocupacion:
                     ocupacion = {
                         "is_occupied": False,
@@ -398,21 +654,25 @@ class PlanningViewSet(viewsets.ViewSet):
                         "fecha_ingreso": None,
                         "fecha_egreso": None,
                     }
-                
+
                 ocupaciones.append(ocupacion)
-            
-            planning_data.append({
-                "habitacion": {
-                    "id": habitacion.id,
-                    "numero": habitacion.numero,
-                    "tipo": habitacion.tipo,
-                    "piso": habitacion.piso,
-                },
-                "ocupaciones": ocupaciones
-            })
-        
-        return Response({
-            "planning": planning_data,
-            "days": [day.isoformat() for day in days],
-            "first_day": first_day.isoformat(),
-        })
+
+            planning_data.append(
+                {
+                    "habitacion": {
+                        "id": habitacion.id,
+                        "numero": habitacion.numero,
+                        "tipo": habitacion.tipo,
+                        "piso": habitacion.piso,
+                    },
+                    "ocupaciones": ocupaciones,
+                }
+            )
+
+        return Response(
+            {
+                "planning": planning_data,
+                "days": [day.isoformat() for day in days],
+                "first_day": first_day.isoformat(),
+            }
+        )

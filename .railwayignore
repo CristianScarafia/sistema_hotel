@@ -1,0 +1,54 @@
+# Archivos de desarrollo
+.env
+.env.local
+.env.development
+*.log
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Archivos de Docker
+docker-compose*.yml
+Dockerfile.dev
+.dockerignore
+
+# Archivos de Git
+.git/
+.gitignore
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de base de datos local
+db.sqlite3
+database/
+
+# Archivos de desarrollo
+venv/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de testing
+test_*.py
+tests/
+*.test.js
+
+# Archivos de documentación
+README*.md
+docs/
+
+# Scripts de desarrollo
+scripts/
+dev.ps1
+dev.sh

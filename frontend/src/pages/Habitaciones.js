@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { habitacionesService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { FaPlus, FaEdit, FaTrash, FaBed, FaEye } from 'react-icons/fa';
 
 const Habitaciones = () => {
+  const { user } = useAuth();
   const [habitaciones, setHabitaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -151,13 +153,16 @@ const Habitaciones = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Habitaciones</h1>
-        <button 
-          onClick={handleNuevaHabitacion}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-        >
-          <FaPlus className="h-4 w-4" />
-          <span>Nueva Habitación</span>
-        </button>
+        {/* Solo mostrar botón de nueva habitación para supervisores */}
+        {user?.perfil?.rol === 'supervisor' && (
+          <button 
+            onClick={handleNuevaHabitacion}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+          >
+            <FaPlus className="h-4 w-4" />
+            <span>Nueva Habitación</span>
+          </button>
+        )}
       </div>
 
       {/* Formulario */}
@@ -272,20 +277,25 @@ const Habitaciones = () => {
                       >
                         <FaEye className="h-4 w-4" />
                       </button>
-                      <button 
-                        onClick={() => handleEditarHabitacion(habitacion)}
-                        className="text-yellow-600 hover:text-yellow-800 p-1 rounded hover:bg-yellow-50"
-                        title="Editar habitación"
-                      >
-                        <FaEdit className="h-4 w-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleEliminarHabitacion(habitacion)}
-                        className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
-                        title="Eliminar habitación"
-                      >
-                        <FaTrash className="h-4 w-4" />
-                      </button>
+                      {/* Solo mostrar botones de editar y eliminar para supervisores */}
+                      {user?.perfil?.rol === 'supervisor' && (
+                        <>
+                          <button 
+                            onClick={() => handleEditarHabitacion(habitacion)}
+                            className="text-yellow-600 hover:text-yellow-800 p-1 rounded hover:bg-yellow-50"
+                            title="Editar habitación"
+                          >
+                            <FaEdit className="h-4 w-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleEliminarHabitacion(habitacion)}
+                            className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                            title="Eliminar habitación"
+                          >
+                            <FaTrash className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

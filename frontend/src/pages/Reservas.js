@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { reservasService } from '../services/api';
+import { reservasService, usuariosService, habitacionesService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 
 const Reservas = () => {
+  const { user } = useAuth();
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [habitaciones, setHabitaciones] = useState([]);
@@ -56,31 +58,47 @@ const Reservas = () => {
 
   const loadHabitaciones = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/habitaciones/', {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      setHabitaciones(data.results || data);
+      const response = await habitacionesService.getAll();
+      const data = response.data;
+      
+      // Verificar si la respuesta es un array o tiene la estructura esperada
+      if (Array.isArray(data)) {
+        setHabitaciones(data);
+      } else if (data.results && Array.isArray(data.results)) {
+        setHabitaciones(data.results);
+      } else {
+        // Si la estructura es inesperada, establecer array vacío
+        console.warn('Estructura de respuesta inesperada para habitaciones:', data);
+        setHabitaciones([]);
+      }
     } catch (error) {
       console.error('Error al cargar habitaciones:', error);
+      setHabitaciones([]);
     }
   };
 
   const loadUsuarios = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/usuarios/', {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      setUsuarios(data.results || data);
+      const response = await usuariosService.getAll();
+      const data = response.data;
+      
+      // Verificar si la respuesta es un array o tiene la estructura esperada
+      if (Array.isArray(data)) {
+        setUsuarios(data);
+      } else if (data.results && Array.isArray(data.results)) {
+        setUsuarios(data.results);
+      } else {
+        // Si la estructura es inesperada, establecer array vacío
+        console.warn('Estructura de respuesta inesperada para usuarios:', data);
+        setUsuarios([]);
+      }
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
+      // Si el error es 403 (Forbidden), mostrar mensaje específico
+      if (error.response?.status === 403) {
+        console.warn('No tienes permisos para ver usuarios. Solo los supervisores pueden acceder a esta información.');
+      }
+      setUsuarios([]);
     }
   };
 
@@ -281,7 +299,7 @@ const Reservas = () => {
                   required
                 >
                   <option value="">Seleccionar encargado</option>
-                  {usuarios.map(usuario => (
+                  {Array.isArray(usuarios) && usuarios.map(usuario => (
                     <option key={usuario.id} value={usuario.id}>
                       {usuario.username}
                     </option>
@@ -300,7 +318,7 @@ const Reservas = () => {
                   required
                 >
                   <option value="">Seleccionar habitación</option>
-                  {habitaciones.map(habitacion => (
+                  {Array.isArray(habitaciones) && habitaciones.map(habitacion => (
                     <option key={habitacion.id} value={habitacion.id}>
                       {habitacion.numero} - {habitacion.tipo}
                     </option>
@@ -540,7 +558,7 @@ const Reservas = () => {
             <h2 className="text-xl font-semibold text-gray-900">Lista de Reservas</h2>
           </div>
           <div className="divide-y divide-gray-200">
-            {reservas.map((reserva) => (
+            {Array.isArray(reservas) && reservas.map((reserva) => (
               <div key={reserva.id} className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -569,20 +587,25 @@ const Reservas = () => {
                     >
                       <FaEye className="h-4 w-4" />
                     </button>
-                    <button 
-                      onClick={() => handleEditarReserva(reserva)}
-                      className="text-yellow-600 hover:text-yellow-800 p-1 rounded hover:bg-yellow-50"
-                      title="Editar reserva"
-                    >
-                      <FaEdit className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleEliminarReserva(reserva)}
-                      className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
-                      title="Eliminar reserva"
-                    >
-                      <FaTrash className="h-4 w-4" />
-                    </button>
+                    {/* Solo mostrar botones de editar y eliminar para supervisores */}
+                    {user?.perfil?.rol === 'supervisor' && (
+                      <>
+                        <button 
+                          onClick={() => handleEditarReserva(reserva)}
+                          className="text-yellow-600 hover:text-yellow-800 p-1 rounded hover:bg-yellow-50"
+                          title="Editar reserva"
+                        >
+                          <FaEdit className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleEliminarReserva(reserva)}
+                          className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                          title="Eliminar reserva"
+                        >
+                          <FaTrash className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

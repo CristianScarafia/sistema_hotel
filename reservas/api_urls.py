@@ -14,10 +14,10 @@ from .api_views import (
 # Configurar el router
 router = DefaultRouter()
 router.register(r"habitaciones", HabitacionViewSet)
-router.register(r"reservas", ReservaViewSet)
+router.register(r"reservas", ReservaViewSet, basename="reservas")
 router.register(r"perfiles", PerfilUsuarioViewSet)
 router.register(r"usuarios", UsuarioViewSet)
-router.register(r'planning', PlanningViewSet, basename='planning')
+router.register(r"planning", PlanningViewSet, basename="planning")
 
 # URLs de la API
 urlpatterns = [
@@ -58,7 +58,7 @@ urlpatterns = [
         name="api_checkouts_hoy",
     ),
     path(
-        "reservas/por-fecha/",
+        "reservas/por_fecha/",
         ReservaViewSet.as_view({"get": "por_fecha"}),
         name="api_reservas_por_fecha",
     ),
@@ -66,6 +66,11 @@ urlpatterns = [
         "reservas/por-habitacion/",
         ReservaViewSet.as_view({"get": "por_habitacion"}),
         name="api_reservas_por_habitacion",
+    ),
+    path(
+        "reservas/limpieza/",
+        ReservaViewSet.as_view({"get": "limpieza"}),
+        name="api_reservas_limpieza",
     ),
     path(
         "perfiles/mi-perfil/",

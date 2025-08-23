@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   FaHome, 
   FaBed, 
@@ -10,22 +11,38 @@ import {
   FaHotel,
   FaSignInAlt,
   FaSignOutAlt,
-  FaCalendarCheck
+  FaCalendarCheck,
+  FaBroom
 } from 'react-icons/fa';
 
 const Sidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
+
+  // Función para obtener el rol del usuario
+  const getUserRole = () => {
+    if (!user || !user.perfil) return 'conserge';
+    return user.perfil.rol || 'conserge';
+  };
+
+  const isSupervisor = getUserRole() === 'supervisor';
 
   const menuItems = [
-    { path: '/', icon: FaHome, label: 'Dashboard', exact: true },
-    { path: '/reservas', icon: FaCalendarAlt, label: 'Reservas' },
-    { path: '/habitaciones', icon: FaBed, label: 'Habitaciones' },
-    { path: '/entradas-salidas', icon: FaSignInAlt, label: 'Entradas y Salidas' },
-    { path: '/usuarios', icon: FaUsers, label: 'Usuarios' },
-    { path: '/estadisticas', icon: FaChartBar, label: 'Estadísticas' },
-    { path: '/configuracion', icon: FaCog, label: 'Configuración' },
-    { path: '/planning', icon: FaCalendarCheck, label: 'Planning' },
+    { path: '/', icon: FaHome, label: 'Dashboard', exact: true, roles: ['conserge', 'supervisor'] },
+    { path: '/reservas', icon: FaCalendarAlt, label: 'Reservas', roles: ['conserge', 'supervisor'] },
+    { path: '/habitaciones', icon: FaBed, label: 'Habitaciones', roles: ['conserge', 'supervisor'] },
+    { path: '/entradas-salidas', icon: FaSignInAlt, label: 'Entradas y Salidas', roles: ['conserge', 'supervisor'] },
+    { path: '/planning', icon: FaCalendarCheck, label: 'Planning', roles: ['conserge', 'supervisor'] },
+    { path: '/ocupacion-limpieza', icon: FaBroom, label: 'Ocupación y Limpieza', roles: ['conserge', 'supervisor'] },
+    { path: '/usuarios', icon: FaUsers, label: 'Usuarios', roles: ['supervisor'] },
+    { path: '/estadisticas', icon: FaChartBar, label: 'Estadísticas', roles: ['supervisor'] },
+    { path: '/configuracion', icon: FaCog, label: 'Configuración', roles: ['supervisor'] },
   ];
+
+  // Filtrar elementos del menú según el rol del usuario
+  const filteredMenuItems = menuItems.filter(item => 
+    item.roles.includes(getUserRole())
+  );
 
   const isActive = (path, exact = false) => {
     if (exact) {
@@ -47,7 +64,7 @@ const Sidebar = () => {
       {/* Navigation Menu */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
+          {filteredMenuItems.map((item) => {
             const Icon = item.icon;
             return (
               <li key={item.path}>

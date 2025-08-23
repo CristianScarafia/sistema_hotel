@@ -6,13 +6,17 @@ import 'react-toastify/dist/ReactToastify.css';
 // Componentes
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Reservas from './pages/Reservas';
 import Habitaciones from './pages/Habitaciones';
 import EntradasSalidas from './pages/EntradasSalidas';
 import Login from './pages/Login';
 import Planning from './pages/Planning';
+import OcupacionLimpieza from './pages/OcupacionLimpieza';
 import Usuarios from './pages/Usuarios';
+import Estadisticas from './pages/Estadisticas';
+import Configuracion from './pages/Configuracion';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
@@ -61,12 +65,33 @@ function App() {
               </Layout>
             </ProtectedRoute>
           } />
-          <Route path="/usuarios" element={
+          <Route path="/ocupacion-limpieza" element={
             <ProtectedRoute>
+              <Layout>
+                <OcupacionLimpieza />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/usuarios" element={
+            <RoleProtectedRoute allowedRoles={['supervisor']}>
               <Layout>
                 <Usuarios />
               </Layout>
-            </ProtectedRoute>
+            </RoleProtectedRoute>
+          } />
+          <Route path="/estadisticas" element={
+            <RoleProtectedRoute allowedRoles={['supervisor']}>
+              <Layout>
+                <Estadisticas />
+              </Layout>
+            </RoleProtectedRoute>
+          } />
+          <Route path="/configuracion" element={
+            <RoleProtectedRoute allowedRoles={['supervisor']}>
+              <Layout>
+                <Configuracion />
+              </Layout>
+            </RoleProtectedRoute>
           } />
         </Routes>
         <ToastContainer

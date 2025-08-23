@@ -46,6 +46,8 @@ export const reservasService = {
   update: (id, data) => api.put(`/reservas/${id}/`, data),
   delete: (id) => api.delete(`/reservas/${id}/`),
   getHoy: () => api.get('/reservas/hoy/'),
+  getReservasPorFecha: (fecha) => api.get(`/reservas/por_fecha/?fecha=${fecha}`).then(response => response.data),
+  getLimpieza: (fecha) => api.get(`/reservas/limpieza/?fecha=${fecha}`).then(response => response.data),
 };
 
 // Servicios de habitaciones
