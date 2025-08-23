@@ -8,9 +8,7 @@ import {
   FaUsers, 
   FaChartBar, 
   FaCog,
-  FaHotel,
   FaSignInAlt,
-  FaSignOutAlt,
   FaCalendarCheck,
   FaBroom
 } from 'react-icons/fa';
@@ -25,7 +23,7 @@ const Sidebar = () => {
     return user.perfil.rol || 'conserge';
   };
 
-  const isSupervisor = getUserRole() === 'supervisor';
+  // const isSupervisor = getUserRole() === 'supervisor';
 
   const menuItems = [
     { path: '/', icon: FaHome, label: 'Dashboard', exact: true, roles: ['conserge', 'supervisor'] },

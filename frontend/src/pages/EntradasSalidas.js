@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { reservasService } from '../services/api';
 import { FaSignInAlt, FaSignOutAlt, FaCalendarAlt, FaUser, FaBed, FaPhone, FaMoneyBillWave } from 'react-icons/fa';
@@ -34,9 +34,9 @@ const EntradasSalidas = () => {
 
   useEffect(() => {
     loadEntradasSalidas();
-  }, [selectedDate]);
+  }, [selectedDate, loadEntradasSalidas]);
 
-  const loadEntradasSalidas = async () => {
+  const loadEntradasSalidas = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -62,7 +62,7 @@ const EntradasSalidas = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate]);
 
   const formatDate = (dateString) => {
     const date = createSafeDate(dateString);

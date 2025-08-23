@@ -28,6 +28,7 @@
     "eject": "react-scripts eject",
     "dev": "react-scripts start"
   },
+  "homepage": ".",
   "eslintConfig": {
     "extends": [
       "react-app",

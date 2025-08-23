@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { planningService } from '../services/api';
-import { FaCalendarAlt, FaBed, FaUser, FaEye, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaCalendarAlt, FaBed } from 'react-icons/fa';
 
 const Planning = () => {
   // Función auxiliar para crear fechas de manera segura
@@ -30,9 +30,9 @@ const Planning = () => {
 
   useEffect(() => {
     loadPlanning();
-  }, [startDate]);
+  }, [startDate, loadPlanning]);
 
-  const loadPlanning = async () => {
+  const loadPlanning = useCallback(async () => {
     try {
       setLoading(true);
       const response = await planningService.getPlanning(startDate);
@@ -43,7 +43,7 @@ const Planning = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate]);
 
   const formatDate = (dateString) => {
     const date = createSafeDate(dateString);

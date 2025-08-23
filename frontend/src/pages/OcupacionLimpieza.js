@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { reservasService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -47,9 +47,9 @@ const OcupacionLimpieza = () => {
     console.log('User:', user);
     console.log('Selected date:', selectedDate);
     loadData();
-  }, [selectedDate, user]);
+  }, [selectedDate, user, loadData]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -112,7 +112,7 @@ const OcupacionLimpieza = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate, user]);
 
   const formatDate = (dateString) => {
     const date = createSafeDate(dateString);
