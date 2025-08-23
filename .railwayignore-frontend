@@ -1,0 +1,17 @@
+# Ignorar el Dockerfile del backend cuando se hace deploy del frontend
+Dockerfile
+requirements.txt
+manage.py
+myproject/
+reservas/
+apps/
+*.py
+*.pyc
+__pycache__/
+.env
+*.log
+database/
+staticfiles/
+media/
+venv/
+.venv/
