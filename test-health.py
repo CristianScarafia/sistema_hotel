@@ -1,69 +1,111 @@
 #!/usr/bin/env python3
 """
-Script para probar el health check localmente
+Health check tester for Django or any HTTP service.
+- Defaults to http://127.0.0.1:${PORT:-8000}/health/
+- Can target a full URL via --url or HEALTH_URL
+- Exits 0 only on 2xx
 """
-import requests
-import time
+import os
 import sys
+import time
+import argparse
+import requests
 
-def test_health_check(base_url="http://localhost:8000"):
-    """Probar el health check"""
-    print(f"🔍 Probando health check en: {base_url}")
-    
-    try:
-        # Probar health check simple
-        response = requests.get(f"{base_url}/health/", timeout=10)
-        print(f"✅ Health check simple: {response.status_code}")
-        print(f"   Respuesta: {response.json()}")
-        
-        # Probar health check detallado
-        response_detailed = requests.get(f"{base_url}/health/detailed/", timeout=10)
-        print(f"✅ Health check detallado: {response_detailed.status_code}")
-        print(f"   Respuesta: {response_detailed.json()}")
-        
-        return True
-        
-    except requests.exceptions.ConnectionError:
-        print(f"❌ No se pudo conectar a {base_url}")
-        return False
-    except requests.exceptions.Timeout:
-        print(f"❌ Timeout al conectar a {base_url}")
-        return False
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        return False
 
-def test_admin(base_url="http://localhost:8000"):
-    """Probar acceso al admin"""
-    print(f"🔍 Probando admin en: {base_url}")
-    
-    try:
-        response = requests.get(f"{base_url}/admin/", timeout=10)
-        print(f"✅ Admin: {response.status_code}")
-        return True
-    except Exception as e:
-        print(f"❌ Error en admin: {e}")
-        return False
+def test_health(
+    url: str, attempts: int, timeout: float, method: str, sleep: float, verify_tls: bool
+) -> bool:
+    print(f"Testing: {url} with {method.upper()} x{attempts}")
+    delay = sleep
+    for i in range(1, attempts + 1):
+        try:
+            resp = requests.request(
+                method.upper(), url, timeout=timeout, verify=verify_tls
+            )
+            ok = 200 <= resp.status_code < 300
+            print(f"[{i}/{attempts}] status={resp.status_code} ok={ok}")
+            # Print a short body snippet for debugging
+            body = (resp.text or "").strip().replace("\n", " ")
+            if body:
+                print(f"  body: {body[:200] + ('...' if len(body) > 200 else '')}")
+            if ok:
+                return True
+        except requests.exceptions.ConnectionError as e:
+            print(f"[{i}/{attempts}] connection error: {e}")
+        except requests.exceptions.Timeout:
+            print(f"[{i}/{attempts}] timeout after {timeout}s")
+        except Exception as e:
+            print(f"[{i}/{attempts}] error: {e}")
+        time.sleep(delay)
+        delay *= 1.5  # simple backoff
+    return False
+
 
 def main():
-    print("🚀 PRUEBA DE HEALTH CHECK")
-    
-    # Probar localmente
-    print("\n📍 Probando localmente...")
-    local_success = test_health_check()
-    test_admin()
-    
-    # Probar en Railway (si se proporciona URL)
-    if len(sys.argv) > 1:
-        railway_url = sys.argv[1]
-        print(f"\n📍 Probando en Railway: {railway_url}")
-        railway_success = test_health_check(railway_url)
-        test_admin(railway_url)
-    else:
-        print("\n💡 Para probar en Railway, ejecuta:")
-        print("   python test-health.py https://tu-app.railway.app")
-    
-    print("\n✨ Prueba completada")
+    parser = argparse.ArgumentParser(
+        description="Probe a health endpoint until it returns 2xx."
+    )
+    parser.add_argument(
+        "--url", help="Full URL (overrides host/port/path). Also read from HEALTH_URL."
+    )
+    parser.add_argument(
+        "--host",
+        default=os.getenv("HEALTH_HOST", "127.0.0.1"),
+        help="Host if --url not provided.",
+    )
+    parser.add_argument(
+        "--port", default=os.getenv("PORT", "8000"), help="Port if --url not provided."
+    )
+    parser.add_argument(
+        "--path",
+        default=os.getenv("HEALTH_PATH", "/health/"),
+        help="Path if --url not provided.",
+    )
+    parser.add_argument(
+        "--attempts",
+        type=int,
+        default=int(os.getenv("HEALTH_ATTEMPTS", "10")),
+        help="Max attempts.",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=float(os.getenv("HEALTH_TIMEOUT", "5")),
+        help="Per request timeout seconds.",
+    )
+    parser.add_argument(
+        "--sleep",
+        type=float,
+        default=float(os.getenv("HEALTH_SLEEP", "2")),
+        help="Initial sleep between attempts.",
+    )
+    parser.add_argument(
+        "--method",
+        default=os.getenv("HEALTH_METHOD", "GET"),
+        choices=["GET", "HEAD"],
+        help="HTTP method.",
+    )
+    parser.add_argument(
+        "--insecure", action="store_true", help="Do not verify TLS certs."
+    )
+    args = parser.parse_args()
+
+    url = args.url or os.getenv("HEALTH_URL")
+    if not url:
+        # Build from host/port/path
+        path = args.path if args.path.startswith("/") else "/" + args.path
+        url = f"http://{args.host}:{args.port}{path}"
+
+    ok = test_health(
+        url=url,
+        attempts=args.attempts,
+        timeout=args.timeout,
+        method=args.method,
+        sleep=args.sleep,
+        verify_tls=not args.insecure,
+    )
+    sys.exit(0 if ok else 1)
+
 
 if __name__ == "__main__":
     main()
