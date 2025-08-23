@@ -19,11 +19,11 @@ ALLOWED_HOSTS = ["*"]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB"),
-        "USER": os.getenv("POSTGRES_USER"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
-        "HOST": os.getenv("POSTGRES_HOST"),
-        "PORT": os.getenv("POSTGRES_PORT"),
+        "NAME": os.getenv("PGDATABASE") or os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("PGUSER") or os.getenv("POSTGRES_USER"),
+        "PASSWORD": os.getenv("PGPASSWORD") or os.getenv("POSTGRES_PASSWORD"),
+        "HOST": os.getenv("PGHOST") or os.getenv("POSTGRES_HOST"),
+        "PORT": os.getenv("PGPORT") or os.getenv("POSTGRES_PORT"),
         "OPTIONS": {
             "client_encoding": "UTF8",
         },
