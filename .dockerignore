@@ -1,84 +1,45 @@
-# Entornos virtuales
-venv/
-env/
-.venv/
-.env
-
-# Archivos de Python
+# Archivos del backend que no necesitamos para el frontend
+requirements.txt
+manage.py
+myproject/
+reservas/
+apps/
+*.py
+*.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Django
+.env
 *.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-media/
+database/
 staticfiles/
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+media/
+venv/
+.venv/
+Dockerfile.backend
 
 # Archivos de desarrollo
 .git/
 .gitignore
-README.md
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+README*.md
+docs/
+scripts/
+dev.ps1
+dev.sh
 
-# IDE
+# Archivos de IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# Sistema operativo
+# Archivos de sistema
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# Docker
-Dockerfile*
-docker-compose*
-.dockerignore
+# Archivos de testing
+test_*.py
+tests/
+*.test.js
 
-# Base de datos
-database/
-*.db
-*.sqlite
-
-# Logs
-logs/
-*.log
-
-# Archivos temporales
-tmp/
-temp/
+# Archivos de Docker del backend
+docker-compose*.yml
+Dockerfile.dev
