@@ -1,0 +1,33 @@
+# Build stage
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Copiar package files
+COPY package*.json ./
+
+# Instalar dependencias
+RUN npm ci --silent
+
+# Copiar código fuente
+COPY . .
+
+# Construir la aplicación
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine
+
+# Instalar serve para servir archivos estáticos
+RUN npm install -g serve
+
+WORKDIR /app
+
+# Copiar archivos construidos
+COPY --from=build /app/build ./build
+
+# Configurar puerto
+ENV PORT=8080
+
+# Script de inicio
+CMD ["sh", "-c", "serve -s build -l $PORT"]

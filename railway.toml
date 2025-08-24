@@ -1,11 +1,17 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "Dockerfile.backend"
 
 [deploy]
-startCommand = "sh entrypoint-railway.sh"
+startCommand = "sh entrypoint-railway-final.sh"
+healthcheckPath = "/health/"
+healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+
+[build.environment]
+NODE_ENV = "production"
+CI = "false"
 
 [env]
 DJANGO_SETTINGS_MODULE = "myproject.settings.production"

@@ -2,13 +2,14 @@
 FROM python:3.13-alpine AS builder
 
 # Instalar dependencias del sistema necesarias para compilar
-RUN apk add --no-cache \
+RUN apk add --no-cache --virtual .build-deps \
     gcc \
     musl-dev \
     postgresql-dev \
     python3-dev \
     libffi-dev \
-    linux-headers
+    linux-headers \
+    && rm -rf /var/cache/apk/*
 
 # Crear directorio de trabajo
 WORKDIR /app
@@ -16,23 +17,25 @@ WORKDIR /app
 # Copiar requirements primero para aprovechar la caché de Docker
 COPY requirements.txt .
 
-# Instalar dependencias de Python
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Instalar dependencias de Python con optimizaciones
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt \
+    && find /usr/local -type d -name __pycache__ -exec rm -rf {} + \
+    && find /usr/local -type f -name '*.pyc' -delete
 
 # Stage final - imagen de producción
 FROM python:3.13-alpine AS production
 
 # Instalar solo las dependencias de runtime necesarias
-RUN apk add --no-cache \
+RUN apk add --no-cache --virtual .runtime-deps \
     postgresql-client \
     libpq \
     curl \
     && rm -rf /var/cache/apk/*
 
 # Crear usuario no-root para seguridad
-RUN addgroup -g 1000 django && \
-    adduser -D -s /bin/sh -u 1000 -G django django
+RUN addgroup -g 1000 django \
+    && adduser -D -s /bin/sh -u 1000 -G django django
 
 # Crear directorio de trabajo
 WORKDIR /app
@@ -58,9 +61,12 @@ ENV PYTHONUNBUFFERED=1 \
 # Exponer puerto
 EXPOSE 8000
 
-# Healthcheck
+# Healthcheck optimizado
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
+
+# Limpiar dependencias temporales
+RUN apk del .runtime-deps
 
 # Comando por defecto
 CMD ["sh", "entrypoint-railway-final.sh"]

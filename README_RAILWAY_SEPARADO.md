@@ -8,17 +8,42 @@ Este documento explica cómo hacer deploy del sistema de hotel en Railway con el
 - Git configurado
 - Acceso a la base de datos PostgreSQL
 
+## ⚠️ Solución a Problemas de Memoria
+
+Si encuentras errores como `exit code: 137` durante el build, hemos implementado varias soluciones:
+
+### Problemas Comunes:
+- **Error 137**: Indica falta de memoria durante el build
+- **Context canceled**: Proceso cancelado por Railway
+- **Build timeout**: Tiempo de build excedido
+
+### Soluciones Implementadas:
+
+1. **Dockerfiles Optimizados**: 
+   - Uso de multi-stage builds
+   - Limpieza de dependencias temporales
+   - Optimización de caché
+
+2. **Versiones Alternativas**:
+   - `Dockerfile.simple`: Versión simplificada del frontend
+   - `Dockerfile.node`: Usa Node.js en lugar de nginx
+
+3. **Script de Prueba**: 
+   - `test-docker-build.sh`: Prueba los builds localmente
+
 ## 🏗️ Estructura del Proyecto
 
 ```
 sistema_hotel/
 ├── railway-backend.json          # Configuración Railway para backend
 ├── railway-backend-variables.env # Variables de entorno backend
-├── Dockerfile.backend           # Dockerfile para backend
+├── Dockerfile.backend           # Dockerfile optimizado para backend
 ├── frontend/
 │   ├── railway.json             # Configuración Railway para frontend
 │   ├── railway-frontend-variables.env # Variables de entorno frontend
-│   └── Dockerfile               # Dockerfile para frontend
+│   ├── Dockerfile.simple        # Dockerfile simplificado
+│   ├── Dockerfile.node          # Dockerfile con Node.js
+│   └── Dockerfile               # Dockerfile original
 └── ...
 ```
 
@@ -46,7 +71,17 @@ sistema_hotel/
    - Crear dos servicios en Railway apuntando al mismo repo
    - Usar diferentes archivos de configuración
 
-### 2. Deploy del Backend (Django)
+### 2. Probar Builds Localmente (Recomendado)
+
+```bash
+# Dar permisos al script de prueba
+chmod +x test-docker-build.sh
+
+# Ejecutar pruebas
+./test-docker-build.sh
+```
+
+### 3. Deploy del Backend (Django)
 
 1. **Crear nuevo servicio en Railway**:
    - Ir a Railway.app
@@ -80,7 +115,7 @@ sistema_hotel/
    - Usará `Dockerfile.backend` para construir la imagen
    - El servicio estará disponible en: `https://hotel-backend-xxx.up.railway.app`
 
-### 3. Deploy del Frontend (React)
+### 4. Deploy del Frontend (React)
 
 1. **Crear nuevo servicio en Railway**:
    - En el mismo proyecto, crear "New Service"
@@ -104,10 +139,10 @@ sistema_hotel/
 
 4. **Deploy**:
    - Railway detectará automáticamente el `railway.json` en la carpeta frontend
-   - Usará `Dockerfile` para construir la imagen
+   - Usará `Dockerfile.simple` para construir la imagen
    - El servicio estará disponible en: `https://hotel-frontend-xxx.up.railway.app`
 
-### 4. Configurar Comunicación entre Servicios
+### 5. Configurar Comunicación entre Servicios
 
 1. **Actualizar CORS en el backend**:
    - En las variables de entorno del backend, agregar:
@@ -206,9 +241,15 @@ curl https://hotel-frontend-xxx.up.railway.app/
    - Verificar que las variables de PostgreSQL estén configuradas
    - Revisar los logs del backend en Railway
 
-4. **Error de build**:
-   - Verificar que los Dockerfiles estén correctos
+4. **Error de build (137)**:
+   - Usar `Dockerfile.simple` en lugar del original
+   - Verificar que no haya dependencias innecesarias
    - Revisar los logs de build en Railway
+
+5. **Error de memoria durante build**:
+   - Usar la versión `Dockerfile.node` del frontend
+   - Reducir el número de workers de Gunicorn
+   - Optimizar las dependencias
 
 ### Comandos Útiles
 
@@ -224,6 +265,9 @@ railway run --service hotel-backend python manage.py migrate
 
 # Ver variables de entorno
 railway variables --service hotel-backend
+
+# Probar builds localmente
+./test-docker-build.sh
 ```
 
 ## 📊 Monitoreo
@@ -261,6 +305,7 @@ Para actualizar el código:
 3. **Backup**: Configurar backups de la base de datos
 4. **Dominio**: Se puede configurar un dominio personalizado
 5. **SSL**: Railway proporciona SSL automáticamente
+6. **Memoria**: Los builds optimizados reducen el uso de memoria
 
 ## 🆘 Soporte
 

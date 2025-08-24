@@ -1,27 +1,37 @@
+# Multi-stage build para optimizar el tamaño final
 FROM node:20-alpine AS build
 
 # Instalar dependencias del sistema necesarias
-RUN apk add --no-cache python3 make g++ git
+RUN apk add --no-cache --virtual .build-deps \
+    python3 \
+    make \
+    g++ \
+    git \
+    && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
 # Copiar archivos de dependencias del frontend
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci
+# Instalar dependencias con optimizaciones
+RUN npm ci --only=production --silent \
+    && npm cache clean --force
 
 # Copiar código fuente del frontend
 COPY . .
 
-# Construir la aplicación
-RUN npm run build
+# Construir la aplicación con optimizaciones
+RUN npm run build \
+    && rm -rf node_modules \
+    && apk del .build-deps
 
 # Etapa de producción con nginx
 FROM nginx:alpine
 
-# Instalar gettext para envsubst
-RUN apk add --no-cache gettext
+# Instalar gettext de forma más eficiente
+RUN apk add --no-cache --virtual .gettext-deps gettext \
+    && rm -rf /var/cache/apk/*
 
 # Copiar archivos construidos
 COPY --from=build /app/build /usr/share/nginx/html
@@ -35,6 +45,9 @@ RUN chmod +x /start.sh
 
 # Configurar puerto
 ENV PORT=8080
+
+# Limpiar dependencias temporales
+RUN apk del .gettext-deps
 
 # Script de inicio
 CMD ["/start.sh"]
