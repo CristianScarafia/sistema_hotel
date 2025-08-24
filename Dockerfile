@@ -6,13 +6,13 @@ RUN apk add --no-cache python3 make g++ git
 WORKDIR /app
 
 # Copiar archivos de dependencias del frontend
-COPY package*.json ./
+COPY frontend/package*.json ./
 
 # Instalar dependencias
 RUN npm ci
 
 # Copiar código fuente del frontend
-COPY . .
+COPY frontend/ .
 
 # Construir la aplicación
 RUN npm run build
@@ -27,10 +27,10 @@ RUN apk add --no-cache gettext
 COPY --from=build /app/build /usr/share/nginx/html
 
 # Copiar configuración de nginx
-COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
+COPY --from=build /app/nginx.conf.template /etc/nginx/conf.d/default.conf.template
 
 # Copiar script de inicio
-COPY start.sh /start.sh
+COPY --from=build /app/start.sh /start.sh
 RUN chmod +x /start.sh
 
 # Configurar puerto

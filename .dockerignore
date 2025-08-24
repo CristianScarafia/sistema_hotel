@@ -15,6 +15,8 @@ media/
 venv/
 .venv/
 Dockerfile.backend
+Dockerfile.dev
+Dockerfile.frontend
 
 # Archivos de desarrollo
 .git/
@@ -42,4 +44,26 @@ tests/
 
 # Archivos de Docker del backend
 docker-compose*.yml
-Dockerfile.dev
+
+# Archivos de Node.js del backend
+node_modules/
+package-lock.json
+package.json
+tailwind.config.js
+postcss.config.js
+
+# Archivos de base de datos
+db.sqlite3
+*.db
+*.sqlite
+
+# Logs y archivos temporales
+*.log
+logs/
+tmp/
+temp/
+
+# Archivos de Railway
+railway*.json
+railway*.toml
+railway*.env

@@ -1,8 +1,23 @@
 import axios from 'axios';
 
-// Configurar axios
+// Configurar axios con URL del backend desde variables de entorno
+const getApiUrl = () => {
+  // En Railway, usar la variable de entorno REACT_APP_API_URL
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // En desarrollo local
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000/api';
+  }
+  
+  // Fallback por defecto
+  return '/api';
+};
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api',
+  baseURL: getApiUrl(),
   withCredentials: true,
 });
 
