@@ -2,12 +2,21 @@
 
 ## Configuración Actual
 
-El proyecto está configurado para hacer deploy del frontend en Railway usando Docker. Los archivos principales son:
+El proyecto está configurado para hacer deploy del frontend en Railway usando Docker. Railway está configurado para usar el directorio `frontend/` como directorio raíz del build.
 
-- `Dockerfile` - Dockerfile principal para el frontend (renombrado desde Dockerfile.frontend)
-- `Dockerfile.backend` - Dockerfile del backend (renombrado desde Dockerfile original)
+Los archivos principales son:
+
+- `frontend/Dockerfile` - Dockerfile para el frontend
+- `Dockerfile.backend` - Dockerfile del backend (en la raíz)
 - `railway-frontend.json` - Configuración específica para Railway
-- `.dockerignore` - Archivos excluidos del build
+- `frontend/.dockerignore` - Archivos excluidos del build del frontend
+
+## Configuración de Railway
+
+Railway está configurado para:
+- **Source Directory**: `frontend/` (directorio raíz del build)
+- **Dockerfile Path**: `Dockerfile` (dentro del directorio frontend)
+- **Builder**: `DOCKERFILE`
 
 ## Pasos para el Deploy
 
@@ -15,9 +24,9 @@ El proyecto está configurado para hacer deploy del frontend en Railway usando D
 
 Asegúrate de que los siguientes archivos estén presentes y correctos:
 
-- ✅ `Dockerfile` (para frontend)
+- ✅ `frontend/Dockerfile`
 - ✅ `railway-frontend.json`
-- ✅ `.dockerignore`
+- ✅ `frontend/.dockerignore`
 - ✅ `frontend/package.json`
 - ✅ `frontend/nginx.conf.template`
 - ✅ `frontend/start.sh`
@@ -36,7 +45,7 @@ git push origin main
 1. Ve a tu proyecto en Railway
 2. Selecciona el servicio del frontend
 3. En la configuración de build:
-   - **Source Directory**: `/` (raíz del proyecto)
+   - **Source Directory**: `frontend/`
    - **Dockerfile Path**: `Dockerfile`
 4. Haz click en "Deploy"
 
@@ -54,7 +63,7 @@ Una vez completado el deploy:
 
 ## Estructura del Dockerfile
 
-El Dockerfile actual:
+El Dockerfile en `frontend/Dockerfile`:
 
 1. **Etapa de Build**:
    - Usa Node.js 20 Alpine
@@ -76,7 +85,7 @@ El Dockerfile actual:
 
 ### Error: "requirements.txt not found"
 - **Causa**: Railway está usando el Dockerfile del backend
-- **Solución**: Asegúrate de que el Dockerfile principal sea el del frontend
+- **Solución**: Asegúrate de que Railway esté configurado para usar el directorio `frontend/`
 
 ### Error: "npm not found"
 - **Causa**: Problema con la instalación de Node.js
@@ -85,9 +94,13 @@ El Dockerfile actual:
 ### Error: "Build failed"
 - **Causa**: Problemas con las dependencias o el código
 - **Solución**: 
-  1. Ejecuta `npm ci` localmente para verificar dependencias
-  2. Ejecuta `npm run build` localmente para verificar el build
+  1. Ejecuta `npm ci` localmente en el directorio `frontend/`
+  2. Ejecuta `npm run build` localmente en el directorio `frontend/`
   3. Revisa los logs de Railway para más detalles
+
+### Error: "frontend directory not found"
+- **Causa**: Railway no está configurado para usar el directorio `frontend/`
+- **Solución**: Verifica la configuración de Railway para usar `frontend/` como Source Directory
 
 ## Variables de Entorno
 
@@ -100,6 +113,7 @@ El frontend puede necesitar las siguientes variables de entorno en Railway:
 
 ### Build local para pruebas
 ```bash
+cd frontend
 docker build -t hotel-frontend-test .
 ```
 
@@ -115,18 +129,32 @@ docker logs <container_id>
 
 ## Notas Importantes
 
-1. **El Dockerfile principal ahora es para el frontend**
-2. **El Dockerfile del backend está renombrado como `Dockerfile.backend`**
-3. **Railway debe usar el `Dockerfile` principal**
-4. **El `.dockerignore` excluye archivos del backend para optimizar el build**
+1. **Railway usa el directorio `frontend/` como directorio raíz del build**
+2. **El Dockerfile está en `frontend/Dockerfile`**
+3. **El contexto de build es el directorio `frontend/`**
+4. **Railway debe estar configurado para usar `frontend/` como Source Directory**
+
+## Configuración de Railway
+
+En Railway Dashboard, asegúrate de que el servicio del frontend tenga:
+
+- **Source Directory**: `frontend/`
+- **Dockerfile Path**: `Dockerfile`
+- **Builder**: `DOCKERFILE`
 
 ## Rollback
 
-Si necesitas volver al Dockerfile del backend:
+Si necesitas volver a una configuración anterior:
 
-```bash
-mv Dockerfile Dockerfile.frontend
-mv Dockerfile.backend Dockerfile
-```
+1. Revisa el historial de commits
+2. Haz rollback del commit específico
+3. Vuelve a hacer deploy
 
-Y actualiza la configuración de Railway para usar el Dockerfile correcto.
+## Verificación del Deploy
+
+Para verificar que el deploy funcionó correctamente:
+
+1. **Build exitoso**: Sin errores en los logs de Railway
+2. **Servicio funcionando**: El contenedor está ejecutándose
+3. **Aplicación accesible**: La URL de Railway muestra la aplicación React
+4. **Sin errores de ESLint**: El build se completó sin advertencias
