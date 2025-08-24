@@ -29,15 +29,8 @@ RUN npm run build \
 # Etapa de producción con nginx
 FROM nginx:alpine
 
-# Instalar gettext de forma más eficiente
-RUN apk add --no-cache --virtual .gettext-deps gettext \
-    && rm -rf /var/cache/apk/*
-
 # Copiar archivos construidos
 COPY --from=build /app/build /usr/share/nginx/html
-
-# Copiar configuración de nginx
-COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
 
 # Copiar script de inicio
 COPY start.sh /start.sh
@@ -45,9 +38,6 @@ RUN chmod +x /start.sh
 
 # Configurar puerto
 ENV PORT=8080
-
-# Limpiar dependencias temporales
-RUN apk del .gettext-deps
 
 # Script de inicio
 CMD ["/start.sh"]
