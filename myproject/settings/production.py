@@ -15,14 +15,23 @@ CORS_ALLOWED_ORIGINS = [
     "https://hotelbermudas.up.railway.app",
     "https://sistemahotel-production-5a7f.up.railway.app",
     "https://hotel-frontend-production.up.railway.app",  # URL del frontend separado
-    "https://hotel-frontend-dev.up.railway.app",        # URL de desarrollo del frontend
+    "https://hotel-frontend-dev.up.railway.app",  # URL de desarrollo del frontend
 ]
+
+# Permitir definir orígenes CORS dinámicamente vía variable de entorno (comma-separated)
+_cors_allowed_from_env = os.getenv("CORS_ALLOWED_ORIGINS")
+if _cors_allowed_from_env:
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip() for origin in _cors_allowed_from_env.split(",") if origin.strip()
+    ]
 
 # Permitir credenciales en CORS
 CORS_ALLOW_CREDENTIALS = True
 
 # Configuración adicional de CORS para desarrollo
-CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').lower() == 'true'
+CORS_ALLOW_ALL_ORIGINS = (
+    os.environ.get("CORS_ALLOW_ALL_ORIGINS", "False").lower() == "true"
+)
 
 CSRF_TRUSTED_ORIGINS = [
     "https://hotelbermudas.up.railway.app",
@@ -31,7 +40,26 @@ CSRF_TRUSTED_ORIGINS = [
     "https://hotel-frontend-dev.up.railway.app",
 ]
 
-ALLOWED_HOSTS = ["*"]
+# Permitir definir orígenes CSRF confiables dinámicamente
+_csrf_trusted_from_env = os.getenv("CSRF_TRUSTED_ORIGINS")
+if _csrf_trusted_from_env:
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip() for origin in _csrf_trusted_from_env.split(",") if origin.strip()
+    ]
+elif CORS_ALLOWED_ORIGINS:
+    # Si no se define explícitamente, usar los CORS como fallback
+    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+_allowed_hosts_from_env = os.getenv("ALLOWED_HOSTS", "*")
+ALLOWED_HOSTS = [
+    host.strip() for host in _allowed_hosts_from_env.split(",") if host.strip()
+]
+
+# Cookies seguras para escenarios FE/BE en dominios distintos
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = "None"
 
 # Configuración de base de datos usando DATABASE_URL
 import dj_database_url
@@ -58,7 +86,7 @@ else:
 
 # Configuración de archivos estáticos
 STATIC_ROOT = Path.joinpath(BASE_DIR, "staticfiles")
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
 # Configuración de logging
 LOGGING = {
@@ -92,4 +120,4 @@ LOGGING = {
 # Configuración de seguridad adicional
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = "DENY"
