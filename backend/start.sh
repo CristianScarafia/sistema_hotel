@@ -29,6 +29,10 @@ python manage.py create_superuser
 echo "Assigning supervisor permissions..."
 python manage.py assign_supervisor_permissions --username admin
 
+# Crear perfil de usuario si no existe
+echo "Creating user profile..."
+python manage.py create_user_profile --username admin
+
 # Iniciar el servidor
 echo "Starting server on port $PORT..."
 python manage.py runserver 0.0.0.0:$PORT

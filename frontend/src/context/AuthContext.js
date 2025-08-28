@@ -65,9 +65,15 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (error) {
       console.error('Error getting user profile:', error);
+      // Si no hay perfil, crear uno por defecto con rol supervisor
       return {
         ...userData,
-        perfil: { rol: 'conserge', turno: 'mañana' }
+        perfil: { 
+          rol: 'supervisor', 
+          turno: 'mañana',
+          telefono: '123456789',
+          direccion: 'Dirección del administrador'
+        }
       };
     }
   };

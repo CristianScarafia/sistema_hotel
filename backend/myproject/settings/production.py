@@ -16,6 +16,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://sistemahotel-production-5a7f.up.railway.app",
     "https://hotel-frontend-production.up.railway.app",  # URL del frontend separado
     "https://hotel-frontend-dev.up.railway.app",  # URL de desarrollo del frontend
+    "https://hotelbermudas.up.railway.app",  # URL actual del frontend
 ]
 
 # Permitir definir orígenes CORS dinámicamente vía variable de entorno (comma-separated)
@@ -38,6 +39,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://sistemahotel-production-5a7f.up.railway.app",
     "https://hotel-frontend-production.up.railway.app",
     "https://hotel-frontend-dev.up.railway.app",
+    "https://hotelbermudas.up.railway.app",  # URL actual del frontend
 ]
 
 # Permitir definir orígenes CSRF confiables dinámicamente
