@@ -9,7 +9,7 @@ COPY package*.json ./
 # Instalar dependencias
 RUN npm ci --only=production
 
-# Copiar código fuente
+# Copiar código fuente y archivos de configuración
 COPY . .
 
 # Construir la aplicación para producción
@@ -18,14 +18,17 @@ RUN npm run build
 # Etapa de producción con nginx
 FROM nginx:alpine
 
+# Instalar wget para health checks
+RUN apk add --no-cache wget
+
 # Copiar archivos construidos desde la etapa anterior
 COPY --from=build /app/build /usr/share/nginx/html
 
 # Copiar configuración de nginx
-COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=build /app/nginx.conf.template /etc/nginx/templates/default.conf.template
 
 # Copiar script de inicio
-COPY start.sh /start.sh
+COPY --from=build /app/start.sh /start.sh
 RUN chmod +x /start.sh
 
 # Exponer puerto (será configurado por Railway)
