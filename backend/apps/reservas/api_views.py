@@ -24,6 +24,23 @@ from .serializers import (
 )
 
 
+def is_supervisor(user):
+    """Función helper para verificar si el usuario es supervisor"""
+    try:
+        # Verificar si el usuario es superusuario (tiene todos los permisos)
+        if user.is_superuser:
+            return True
+
+        # Verificar si tiene perfil y es supervisor
+        if hasattr(user, "perfil") and user.perfil:
+            return user.perfil.rol == "supervisor"
+
+        return False
+    except Exception as e:
+        print(f"Error verificando supervisor: {e}")
+        return False
+
+
 class AuthView(APIView):
     """Vista para autenticación"""
 
@@ -81,13 +98,21 @@ class HabitacionViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Crear habitación - solo supervisores"""
+        print(f"=== CREANDO HABITACIÓN ===")
+        print(f"Usuario: {request.user.username}")
+        print(f"Es superusuario: {request.user.is_superuser}")
+        print(f"Es supervisor: {self._is_supervisor(request.user)}")
+
         if not self._is_supervisor(request.user):
+            print(f"❌ Acceso denegado para {request.user.username}")
             return Response(
                 {
                     "error": "Acceso denegado. Solo los supervisores pueden crear habitaciones."
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        print(f"✅ Acceso permitido para {request.user.username}")
         return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
@@ -114,10 +139,7 @@ class HabitacionViewSet(viewsets.ModelViewSet):
 
     def _is_supervisor(self, user):
         """Verificar si el usuario es supervisor"""
-        try:
-            return user.perfil.rol == "supervisor"
-        except:
-            return False
+        return is_supervisor(user)
 
     @action(detail=False, methods=["get"])
     def disponibles(self, request):
@@ -186,10 +208,7 @@ class ReservaViewSet(viewsets.ModelViewSet):
 
     def _is_supervisor(self, user):
         """Verificar si el usuario es supervisor"""
-        try:
-            return user.perfil.rol == "supervisor"
-        except:
-            return False
+        return is_supervisor(user)
 
     @action(detail=False, methods=["get"])
     def hoy(self, request):
@@ -559,10 +578,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
     def _is_supervisor(self, user):
         """Verificar si el usuario es supervisor"""
-        try:
-            return user.perfil.rol == "supervisor"
-        except:
-            return False
+        return is_supervisor(user)
 
     def perform_create(self, serializer):
         """Crear usuario con contraseña encriptada"""
