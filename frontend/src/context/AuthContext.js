@@ -41,9 +41,21 @@ export const AuthProvider = ({ children }) => {
     }
   );
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+  const getUserProfile = async (userData) => {
+    try {
+      const profileResponse = await api.get('/api/perfiles/mi-perfil/');
+      return {
+        ...userData,
+        perfil: profileResponse.data
+      };
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      return {
+        ...userData,
+        perfil: { rol: 'conserge', turno: 'mañana' }
+      };
+    }
+  };
 
   const checkAuthStatus = useCallback(async () => {
     try {
@@ -63,21 +75,9 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const getUserProfile = async (userData) => {
-    try {
-      const profileResponse = await api.get('/api/perfiles/mi-perfil/');
-      return {
-        ...userData,
-        perfil: profileResponse.data
-      };
-    } catch (error) {
-      console.error('Error getting user profile:', error);
-      return {
-        ...userData,
-        perfil: { rol: 'conserge', turno: 'mañana' }
-      };
-    }
-  };
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const login = async (credentials) => {
     try {

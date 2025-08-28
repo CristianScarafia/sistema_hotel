@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  # Frontend con nginx para Railway
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - PORT=${PORT:-8080}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

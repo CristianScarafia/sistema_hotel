@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from reservas.models import PerfilUsuario
+from apps.reservas.models import PerfilUsuario
 
 
 class Command(BaseCommand):

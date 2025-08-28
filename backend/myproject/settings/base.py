@@ -22,11 +22,10 @@ BASE_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
-    "reservas",
-    "debug_toolbar",
+    # "debug_toolbar",
 ]
 
-LOCAL_APPS = ["apps.core"]
+LOCAL_APPS = ["apps.core", "apps.reservas"]
 
 THIRD_APPS = []
 
@@ -41,11 +40,11 @@ BASE_MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    # "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 LOCAL_MIDDLEWARE = [
-    "reservas.middleware.AlertMiddleware",
+    "apps.reservas.middleware.AlertMiddleware",
 ]
 
 THIRD_MIDDLEWARE = [
@@ -59,7 +58,7 @@ ROOT_URLCONF = "myproject.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "reservas" / "templates"],
+        "DIRS": [BASE_DIR / "apps" / "reservas" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -197,7 +196,7 @@ STATIC_URL = "/static/"
 
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "reservas", "static"),
+    os.path.join(BASE_DIR, "apps", "reservas", "static"),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
