@@ -1,4 +1,5 @@
 from django.urls import path, include
+from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
 from .api_views import (
     HabitacionViewSet,
@@ -11,6 +12,19 @@ from .api_views import (
     PlanningViewSet,
 )
 
+def api_root(request):
+    """Endpoint raíz de la API"""
+    return JsonResponse({
+        "message": "Hotel API",
+        "version": "1.0",
+        "endpoints": {
+            "auth": "/api/auth/",
+            "reservas": "/api/reservas/",
+            "habitaciones": "/api/habitaciones/",
+            "usuarios": "/api/usuarios/",
+        }
+    })
+
 # Configurar el router
 router = DefaultRouter()
 router.register(r"habitaciones", HabitacionViewSet)
@@ -21,6 +35,8 @@ router.register(r"planning", PlanningViewSet, basename="planning")
 
 # URLs de la API
 urlpatterns = [
+    # Endpoint raíz de la API (público)
+    path("", api_root, name="api_root"),
     # Rutas del router (CRUD automático)
     path("", include(router.urls)),
     # Autenticación

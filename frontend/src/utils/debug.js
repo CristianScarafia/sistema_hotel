@@ -14,7 +14,10 @@ export const debugApiConfig = () => {
   }
   
   // Test de conexión
-  fetch(process.env.REACT_APP_API_URL || '/api')
+  const testUrl = process.env.REACT_APP_API_URL || '/api';
+  console.log('🔗 Probando conexión a:', testUrl);
+  
+  fetch(testUrl)
     .then(response => {
       console.log('✅ Conexión exitosa:', response.status);
     })

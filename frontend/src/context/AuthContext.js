@@ -16,8 +16,23 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Configurar axios con credenciales y URL base
+  const getApiUrl = () => {
+    // En Railway, usar la variable de entorno REACT_APP_API_URL
+    if (process.env.REACT_APP_API_URL) {
+      return process.env.REACT_APP_API_URL.replace('/api', ''); // Remover /api para que sea la base URL
+    }
+    
+    // En desarrollo local
+    if (process.env.NODE_ENV === 'development') {
+      return 'http://localhost:8000';
+    }
+    
+    // Fallback por defecto
+    return '';
+  };
+
   const api = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: getApiUrl(),
     withCredentials: true,
   });
 
