@@ -6,13 +6,16 @@ echo "Starting Django backend..."
 # Obtener el puerto desde la variable de entorno
 PORT=${PORT:-8000}
 
-# Esperar a que la base de datos esté lista
+# Configurar Django settings
+export DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-myproject.settings.production}
+
+# Esperar a que la base de datos esté lista (con timeout)
 echo "Waiting for database..."
-python manage.py wait_for_db
+timeout 60 bash -c 'until python manage.py wait_for_db; do sleep 2; done'
 
 # Ejecutar migraciones
 echo "Running migrations..."
-python manage.py migrate
+python manage.py migrate --noinput
 
 # Recolectar archivos estáticos
 echo "Collecting static files..."

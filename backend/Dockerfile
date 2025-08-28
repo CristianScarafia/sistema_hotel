@@ -1,0 +1,42 @@
+FROM python:3.11-slim
+
+# Establecer variables de entorno
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Establecer directorio de trabajo
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        postgresql-client \
+        curl \
+        gcc \
+        g++ \
+        libpq-dev \
+        wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements y instalar dependencias de Python
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copiar el código del proyecto
+COPY . .
+
+# Crear directorios necesarios
+RUN mkdir -p /app/staticfiles /app/media
+
+# Dar permisos de ejecución al script de inicio
+RUN chmod +x /app/start.sh
+
+# Recolectar archivos estáticos
+RUN python manage.py collectstatic --noinput
+
+# Exponer puerto
+EXPOSE 8000
+
+# Comando de inicio
+CMD ["/app/start.sh"]
