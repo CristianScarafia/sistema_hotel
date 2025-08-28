@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # Backend Django para Railway
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - PORT=${PORT:-8000}
+      - DEBUG=0
+      - DJANGO_SETTINGS_MODULE=myproject.settings.production
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

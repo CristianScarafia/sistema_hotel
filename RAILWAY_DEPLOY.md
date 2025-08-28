@@ -38,6 +38,28 @@ REACT_APP_API_URL=https://tu-backend-url.com/api
 PORT=8080
 ```
 
+#### **Ejemplos de REACT_APP_API_URL:**
+
+**Si usas Railway para el backend:**
+```env
+REACT_APP_API_URL=https://tu-backend-railway.up.railway.app/api
+```
+
+**Si usas Heroku para el backend:**
+```env
+REACT_APP_API_URL=https://tu-app-heroku.herokuapp.com/api
+```
+
+**Si usas DigitalOcean para el backend:**
+```env
+REACT_APP_API_URL=https://tu-droplet-ip.com/api
+```
+
+**Para desarrollo local:**
+```env
+REACT_APP_API_URL=http://localhost:8000/api
+```
+
 ### 4. Configurar el Deploy
 
 1. En Railway, ve a "Settings" del servicio
@@ -65,13 +87,45 @@ Railway detectará automáticamente:
 Railway URL → Nginx (puerto 8080) → React App (archivos estáticos)
 ```
 
+## Desplegar el Backend en Railway
+
+### Configuración del Backend
+
+Para desplegar el backend en Railway, necesitas:
+
+1. **Crear un segundo servicio** en Railway para el backend
+2. **Configurar las variables de entorno** necesarias
+3. **Usar el Dockerfile de producción** del backend
+
+### Variables de Entorno para el Backend
+
+```env
+# Configuración de Django
+DEBUG=0
+DJANGO_SETTINGS_MODULE=myproject.settings.production
+SECRET_KEY=tu-secret-key-super-segura
+ALLOWED_HOSTS=*
+
+# Base de datos (Railway te proporciona esto automáticamente)
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# Variables de Railway (automáticas)
+PORT=8000
+```
+
+### Pasos para el Backend
+
+1. **En Railway, crea un nuevo servicio**
+2. **Configura el Root Directory:** `backend/`
+3. **Configura el Dockerfile Path:** `Dockerfile.prod`
+4. **Agrega las variables de entorno** mencionadas arriba
+5. **Railway detectará automáticamente** la configuración
+
 ## Notas Importantes
 
-⚠️ **Backend separado:** Esta configuración solo despliega el frontend. Para el backend necesitarás:
-- Un servicio separado en Railway, o
-- Usar otro proveedor (Heroku, DigitalOcean, etc.)
+✅ **Ahora puedes desplegar tanto frontend como backend en Railway**
 
-🔧 **API URL:** Asegúrate de configurar `REACT_APP_API_URL` apuntando a tu backend desplegado.
+🔧 **API URL:** Una vez desplegado el backend, actualiza `REACT_APP_API_URL` en el frontend con la URL del backend de Railway.
 
 ## Troubleshooting
 
