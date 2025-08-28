@@ -11,7 +11,7 @@ export DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-myproject.settings.produ
 
 # Esperar a que la base de datos esté lista (con timeout)
 echo "Waiting for database..."
-timeout 60 bash -c 'until python manage.py wait_for_db; do sleep 2; done'
+timeout 60 bash -c 'until python manage.py wait_for_db; do sleep 2; done' || echo "Database connection timeout, continuing anyway..."
 
 # Ejecutar migraciones
 echo "Running migrations..."
@@ -21,17 +21,9 @@ python manage.py migrate --noinput
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-# Crear superusuario si no existe (opcional)
-echo "Checking for superuser..."
-python manage.py shell -c "
-from django.contrib.auth import get_user_model
-User = get_user_model()
-if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
-    print('Superuser created: admin/admin123')
-else:
-    print('Superuser already exists')
-"
+# Crear superusuario si no existe
+echo "Creating superuser..."
+python manage.py create_superuser
 
 # Iniciar el servidor
 echo "Starting server on port $PORT..."
