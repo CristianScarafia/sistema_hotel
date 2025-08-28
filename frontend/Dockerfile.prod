@@ -9,7 +9,7 @@ COPY package*.json ./
 # Instalar dependencias
 RUN npm ci --only=production
 
-# Copiar código fuente y archivos de configuración
+# Copiar código fuente
 COPY . .
 
 # Construir la aplicación para producción
@@ -24,11 +24,11 @@ RUN apk add --no-cache wget
 # Copiar archivos construidos desde la etapa anterior
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Copiar configuración de nginx
+# Copiar archivos de configuración desde la etapa de build
 COPY --from=build /app/nginx.conf.template /etc/nginx/templates/default.conf.template
-
-# Copiar script de inicio
 COPY --from=build /app/start.sh /start.sh
+
+# Dar permisos de ejecución al script
 RUN chmod +x /start.sh
 
 # Exponer puerto (será configurado por Railway)
