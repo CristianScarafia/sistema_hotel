@@ -1,5 +1,10 @@
 // Debug utility para verificar configuración de API
 export const debugApiConfig = () => {
+  // Solo ejecutar en desarrollo
+  if (process.env.NODE_ENV !== 'development') {
+    return;
+  }
+  
   console.log('=== DEBUG API CONFIG ===');
   console.log('NODE_ENV:', process.env.NODE_ENV);
   console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
@@ -28,6 +33,11 @@ export const debugApiConfig = () => {
 
 // Función para mostrar la configuración en la consola
 export const logApiConfig = () => {
+  // Solo ejecutar en desarrollo
+  if (process.env.NODE_ENV !== 'development') {
+    return {};
+  }
+  
   const config = {
     nodeEnv: process.env.NODE_ENV,
     apiUrl: process.env.REACT_APP_API_URL,

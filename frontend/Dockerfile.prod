@@ -18,8 +18,8 @@ RUN npm run build
 # Etapa de producción con nginx
 FROM nginx:alpine
 
-# Instalar wget para health checks
-RUN apk add --no-cache wget
+# Instalar wget para health checks y envsubst para variables de entorno
+RUN apk add --no-cache wget gettext
 
 # Copiar archivos construidos desde la etapa anterior
 COPY --from=build /app/build /usr/share/nginx/html

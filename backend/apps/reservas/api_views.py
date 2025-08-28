@@ -34,6 +34,20 @@ def is_supervisor(user):
         # Verificar si tiene perfil y es supervisor
         if hasattr(user, "perfil") and user.perfil:
             return user.perfil.rol == "supervisor"
+        
+        # Si no tiene perfil, crear uno automáticamente
+        try:
+            perfil = PerfilUsuario.objects.get(usuario=user)
+            return perfil.rol == "supervisor"
+        except PerfilUsuario.DoesNotExist:
+            # Crear perfil automáticamente
+            perfil = PerfilUsuario.objects.create(
+                usuario=user,
+                rol='supervisor' if user.is_superuser else 'conserge',
+                turno='mañana',
+                activo=True
+            )
+            return perfil.rol == "supervisor"
 
         return False
     except Exception as e:
@@ -502,9 +516,15 @@ class PerfilUsuarioViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(perfil)
             return Response(serializer.data)
         except PerfilUsuario.DoesNotExist:
-            return Response(
-                {"error": "Perfil no encontrado"}, status=status.HTTP_404_NOT_FOUND
+            # Crear perfil automáticamente si no existe
+            perfil = PerfilUsuario.objects.create(
+                usuario=request.user,
+                rol='supervisor' if request.user.is_superuser else 'conserge',
+                turno='mañana',
+                activo=True
             )
+            serializer = self.get_serializer(perfil)
+            return Response(serializer.data)
 
 
 class UsuarioViewSet(viewsets.ModelViewSet):

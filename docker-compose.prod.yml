@@ -1,8 +1,28 @@
 version: '3.8'
 
 services:
+  # Backend Django
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=False
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # Frontend con nginx para Railway
-  web:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
@@ -11,6 +31,9 @@ services:
     environment:
       - PORT=${PORT:-8080}
       - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000/api}
+      - NODE_ENV=production
+    depends_on:
+      - backend
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080"]
