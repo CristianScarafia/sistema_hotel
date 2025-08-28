@@ -31,10 +31,14 @@ def is_supervisor(user):
         if user.is_superuser:
             return True
 
+        # Verificar si es staff (también tiene permisos de supervisor)
+        if user.is_staff:
+            return True
+
         # Verificar si tiene perfil y es supervisor
         if hasattr(user, "perfil") and user.perfil:
             return user.perfil.rol == "supervisor"
-        
+
         # Si no tiene perfil, crear uno automáticamente
         try:
             perfil = PerfilUsuario.objects.get(usuario=user)
@@ -43,9 +47,11 @@ def is_supervisor(user):
             # Crear perfil automáticamente
             perfil = PerfilUsuario.objects.create(
                 usuario=user,
-                rol='supervisor' if user.is_superuser else 'conserge',
-                turno='mañana',
-                activo=True
+                rol=(
+                    "supervisor" if (user.is_superuser or user.is_staff) else "conserge"
+                ),
+                turno="mañana",
+                activo=True,
             )
             return perfil.rol == "supervisor"
 
@@ -519,9 +525,13 @@ class PerfilUsuarioViewSet(viewsets.ModelViewSet):
             # Crear perfil automáticamente si no existe
             perfil = PerfilUsuario.objects.create(
                 usuario=request.user,
-                rol='supervisor' if request.user.is_superuser else 'conserge',
-                turno='mañana',
-                activo=True
+                rol=(
+                    "supervisor"
+                    if (request.user.is_superuser or request.user.is_staff)
+                    else "conserge"
+                ),
+                turno="mañana",
+                activo=True,
             )
             serializer = self.get_serializer(perfil)
             return Response(serializer.data)

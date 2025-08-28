@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
       return {
         ...userData,
         perfil: { 
-          rol: userData.is_superuser ? 'supervisor' : 'conserge', 
+          rol: (userData.is_superuser || userData.is_staff) ? 'supervisor' : 'conserge', 
           turno: 'mañana',
           telefono: '123456789',
           direccion: 'Dirección del administrador'
