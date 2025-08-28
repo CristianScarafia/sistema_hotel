@@ -19,31 +19,17 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
-
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-media/
-staticfiles/
 
 # Virtual environments
-.env
-.venv
-env/
 venv/
+env/
 ENV/
-env.bak/
-venv.bak/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store
@@ -67,41 +53,24 @@ docker-compose*
 README.md
 *.md
 
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-.tox/
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
+# Logs
+*.log
+logs/
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Media and static files (se generarán en runtime)
+media/
+staticfiles/
 
-# pyenv
-.python-version
+# Database
+*.sqlite3
+*.db
 
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
+# Environment variables
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+.env.development
+.env.test
+.env.production
 
 
 
