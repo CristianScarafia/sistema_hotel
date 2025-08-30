@@ -93,12 +93,14 @@ export const AuthProvider = ({ children }) => {
   }, [api, getUserProfile]);
 
   useEffect(() => {
-    // Primero pedir el token CSRF para que Django setee la cookie en dominios cruzados
+    // Bootstrap CSRF para dominios cruzados
     (async () => {
       try {
+        console.log('🔒 Obteniendo token CSRF...');
         await api.get('/api/csrf/');
+        console.log('✅ Token CSRF obtenido');
       } catch (e) {
-        console.warn('No se pudo obtener CSRF inicialmente:', e.response?.data || e.message);
+        console.warn('⚠️ No se pudo obtener CSRF inicialmente:', e.response?.data || e.message);
       } finally {
         checkAuthStatus();
       }

@@ -17,6 +17,7 @@ const getApiUrl = () => {
 };
 
 // Configurar axios globalmente para CSRF
+axios.defaults.baseURL = getApiUrl();
 axios.defaults.withCredentials = true;
 axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';

@@ -57,6 +57,7 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_HTTPONLY = False  # Permitir lectura desde JS para dominios cruzados
 
 # Configuración de base de datos usando DATABASE_URL
 import dj_database_url
