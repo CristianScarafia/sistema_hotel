@@ -5,7 +5,9 @@ echo "Starting nginx server..."
 
 # Obtener el puerto desde la variable de entorno
 PORT=${PORT:-8080}
+# Normalizar REACT_APP_API_URL sin barra final para luego agregarla en nginx
 REACT_APP_API_URL=${REACT_APP_API_URL:-https://sistemahotel-production-5a7f.up.railway.app/api}
+REACT_APP_API_URL=${REACT_APP_API_URL%/}
 
 echo "Configurando nginx con:"
 echo "PORT: $PORT"
