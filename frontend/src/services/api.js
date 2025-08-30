@@ -16,12 +16,17 @@ const getApiUrl = () => {
   return '/api';
 };
 
+// Configurar axios globalmente para CSRF
+axios.defaults.withCredentials = true;
+axios.defaults.xsrfCookieName = 'csrftoken';
+axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+
 const api = axios.create({
   baseURL: getApiUrl(),
   withCredentials: true,
 });
 
-// Interceptor para manejar CSRF
+// Interceptor para manejar CSRF (backup manual)
 api.interceptors.request.use(
   (config) => {
     // Obtener el token CSRF de las cookies

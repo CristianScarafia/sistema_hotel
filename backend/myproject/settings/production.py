@@ -12,10 +12,8 @@ DEBUG = False
 
 # Configuración CORS para permitir comunicación con frontend separado
 CORS_ALLOWED_ORIGINS = [
-    "https://hotelbermudas.up.railway.app",
     "https://sistemahotel-production-5a7f.up.railway.app",
-    "https://hotel-frontend-production.up.railway.app",  # URL del frontend separado
-    "https://hotel-frontend-dev.up.railway.app",  # URL de desarrollo del frontend
+    "https://hotelbermudas.up.railway.app",
 ]
 
 # Permitir definir orígenes CORS dinámicamente vía variable de entorno (comma-separated)
@@ -34,10 +32,9 @@ CORS_ALLOW_ALL_ORIGINS = (
 )
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://hotelbermudas.up.railway.app",
+    "https://*.railway.app",
     "https://sistemahotel-production-5a7f.up.railway.app",
-    "https://hotel-frontend-production.up.railway.app",
-    "https://hotel-frontend-dev.up.railway.app",
+    "https://hotelbermudas.up.railway.app",
 ]
 
 # Permitir definir orígenes CSRF confiables dinámicamente
@@ -125,6 +122,11 @@ LOGGING = {
         "django.security": {
             "handlers": ["console", "file"],
             "level": "ERROR",
+            "propagate": False,
+        },
+        "django.security.csrf": {
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": False,
         },
         "django.db.backends": {
