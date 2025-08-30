@@ -10,6 +10,11 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
+# Respetar cabeceras de proxy y no forzar redirect (Railway ya termina TLS)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = False
+
 # Configuración CORS para permitir comunicación con frontend separado
 CORS_ALLOWED_ORIGINS = [
     "https://sistemahotel-production-5a7f.up.railway.app",

@@ -121,7 +121,8 @@ class CsrfTokenView(APIView):
 
     def get(self, request):
         token = get_token(request)
-        return Response({"csrfToken": token})
+        # Emitir clave estándar 'csrftoken' y setear cookie via ensure_csrf_cookie
+        return Response({"csrftoken": token})
 
 
 class FixAdminView(APIView):

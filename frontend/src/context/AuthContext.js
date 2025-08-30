@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }) => {
       try {
         console.log('🔒 Obteniendo token CSRF...');
         const resp = await api.get('/api/csrf/');
-        const token = resp?.data?.csrfToken;
+        const token = resp?.data?.csrftoken;
         if (token) {
           setCsrfToken(token);
           console.log('✅ Token CSRF obtenido');
