@@ -582,7 +582,7 @@ class PerfilUsuarioViewSet(viewsets.ModelViewSet):
     serializer_class = PerfilUsuarioSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get"], url_path="mi-perfil")
     def mi_perfil(self, request):
         """Obtener perfil del usuario actual"""
         try:

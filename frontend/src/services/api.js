@@ -22,29 +22,34 @@ axios.defaults.withCredentials = true;
 axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 
+// Almacén en memoria para el token CSRF (útil en cross-site)
+let csrfTokenValue = null;
+
+export const setCsrfToken = (token) => {
+  csrfTokenValue = token || null;
+  if (csrfTokenValue) {
+    api.defaults.headers.common['X-CSRFToken'] = csrfTokenValue;
+    axios.defaults.headers.common['X-CSRFToken'] = csrfTokenValue;
+  } else {
+    delete api.defaults.headers.common['X-CSRFToken'];
+    delete axios.defaults.headers.common['X-CSRFToken'];
+  }
+};
+
 const api = axios.create({
   baseURL: getApiUrl(),
   withCredentials: true,
 });
 
-// Interceptor para manejar CSRF (backup manual)
+// Interceptor para adjuntar CSRF desde memoria si está disponible
 api.interceptors.request.use(
   (config) => {
-    // Obtener el token CSRF de las cookies
-    const csrfToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('csrftoken='))
-      ?.split('=')[1];
-    
-    if (csrfToken) {
-      config.headers['X-CSRFToken'] = csrfToken;
+    if (csrfTokenValue) {
+      config.headers['X-CSRFToken'] = csrfTokenValue;
     }
-    
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Interceptor para manejar errores

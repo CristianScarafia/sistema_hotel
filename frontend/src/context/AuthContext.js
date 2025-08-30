@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
+import { setCsrfToken } from '../services/api';
 
 // Helper para obtener la URL base de la API
 const getApiUrl = () => {
@@ -38,16 +39,7 @@ export const AuthProvider = ({ children }) => {
       withCredentials: true,
     });
     instance.interceptors.request.use(
-      (config) => {
-        const csrfToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('csrftoken='))
-          ?.split('=')[1];
-        if (csrfToken) {
-          config.headers['X-CSRFToken'] = csrfToken;
-        }
-        return config;
-      },
+      (config) => config,
       (error) => Promise.reject(error)
     );
     return instance;
@@ -97,8 +89,14 @@ export const AuthProvider = ({ children }) => {
     (async () => {
       try {
         console.log('🔒 Obteniendo token CSRF...');
-        await api.get('/api/csrf/');
-        console.log('✅ Token CSRF obtenido');
+        const resp = await api.get('/api/csrf/');
+        const token = resp?.data?.csrfToken;
+        if (token) {
+          setCsrfToken(token);
+          console.log('✅ Token CSRF obtenido');
+        } else {
+          console.warn('⚠️ CSRF sin token en respuesta');
+        }
       } catch (e) {
         console.warn('⚠️ No se pudo obtener CSRF inicialmente:', e.response?.data || e.message);
       } finally {
