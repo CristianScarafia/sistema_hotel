@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
 
   const getUserProfile = useCallback(async (userData) => {
     try {
-      const profileResponse = await api.get('/api/perfiles/mi-perfil/');
+      const profileResponse = await api.get('/api/perfiles/mi_perfil/');
       return {
         ...userData,
         perfil: profileResponse.data
