@@ -33,25 +33,22 @@ INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
 
 BASE_MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # debe ir aqui
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 LOCAL_MIDDLEWARE = [
-    "apps.reservas.middleware.AlertMiddleware",
+    "apps.reservas.middleware.AlertMiddleware",  # puede ir al final
 ]
 
-THIRD_MIDDLEWARE = [
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-]
 
-MIDDLEWARE = BASE_MIDDLEWARE + LOCAL_MIDDLEWARE + THIRD_MIDDLEWARE
+MIDDLEWARE = BASE_MIDDLEWARE + LOCAL_MIDDLEWARE
 
 ROOT_URLCONF = "myproject.urls"
 
