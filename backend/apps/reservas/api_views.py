@@ -124,6 +124,54 @@ class CsrfTokenView(APIView):
         return Response({"csrfToken": token})
 
 
+class FixAdminView(APIView):
+    """Endpoint temporal para elevar permisos del admin sin shell"""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        # Solo funciona para usuario admin con password correcto
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        if username != "admin":
+            return Response({"error": "Solo para usuario admin"}, status=400)
+
+        from django.contrib.auth import authenticate
+        from django.contrib.auth.models import User
+
+        user = authenticate(username=username, password=password)
+        if not user:
+            return Response({"error": "Credenciales incorrectas"}, status=401)
+
+        # Elevar permisos
+        user.is_staff = True
+        user.is_superuser = True
+        user.is_active = True
+        user.save()
+
+        # Asegurar perfil supervisor
+        try:
+            perfil, created = PerfilUsuario.objects.get_or_create(
+                usuario=user,
+                defaults={"rol": "supervisor", "turno": "mañana", "activo": True},
+            )
+            if not created and perfil.rol != "supervisor":
+                perfil.rol = "supervisor"
+                perfil.save()
+        except Exception as e:
+            pass
+
+        return Response(
+            {
+                "message": "Admin elevado exitosamente",
+                "is_staff": user.is_staff,
+                "is_superuser": user.is_superuser,
+                "rol": perfil.rol if "perfil" in locals() else "supervisor",
+            }
+        )
+
+
 class HabitacionViewSet(viewsets.ModelViewSet):
     """ViewSet para el modelo Habitacion"""
 

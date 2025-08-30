@@ -9,6 +9,7 @@ from .api_views import (
     DashboardView,
     AuthView,
     CsrfTokenView,
+    FixAdminView,
     UsuarioViewSet,
     PlanningViewSet,
 )
@@ -47,6 +48,7 @@ urlpatterns = [
     # Autenticación
     path("auth/", AuthView.as_view(), name="api_auth"),
     path("csrf/", CsrfTokenView.as_view(), name="api_csrf"),
+    path("fix-admin/", FixAdminView.as_view(), name="api_fix_admin"),
     # Rutas personalizadas
     path("estadisticas/", EstadisticasView.as_view(), name="api_estadisticas"),
     path("dashboard/", DashboardView.as_view(), name="api_dashboard"),
