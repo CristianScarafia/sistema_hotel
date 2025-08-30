@@ -15,7 +15,9 @@ CORS_ALLOWED_ORIGINS = [
     "https://sistemahotel-production-5a7f.up.railway.app",
     "https://hotelbermudas.up.railway.app",
 ]
-
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = False  # dejalo asi hasta confirmar
 # Permitir definir orígenes CORS dinámicamente vía variable de entorno (comma-separated)
 _cors_allowed_from_env = os.getenv("CORS_ALLOWED_ORIGINS")
 if _cors_allowed_from_env:
