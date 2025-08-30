@@ -8,7 +8,8 @@ from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from datetime import date, timedelta, datetime
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.middleware.csrf import get_token
 from .models import Reserva, Habitacion, PerfilUsuario
 from .serializers import (
     ReservaSerializer,
@@ -61,6 +62,7 @@ def is_supervisor(user):
         return False
 
 
+@method_decorator(ensure_csrf_cookie, name="get")
 class AuthView(APIView):
     """Vista para autenticación"""
 
@@ -69,6 +71,13 @@ class AuthView(APIView):
 
     def post(self, request):
         """Login"""
+        # Debug de CSRF/CORS: registrar el Origin y Host
+        try:
+            origin = request.META.get("HTTP_ORIGIN")
+            host = request.get_host()
+            print(f"[AuthView.post] Origin: {origin} | Host: {host}")
+        except Exception:
+            pass
         username = request.data.get("username")
         password = request.data.get("password")
 
@@ -102,6 +111,17 @@ class AuthView(APIView):
             return Response(
                 {"error": "No autenticado"}, status=status.HTTP_401_UNAUTHORIZED
             )
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CsrfTokenView(APIView):
+    """Devuelve el token CSRF para clientes SPA"""
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        token = get_token(request)
+        return Response({"csrfToken": token})
 
 
 class HabitacionViewSet(viewsets.ModelViewSet):

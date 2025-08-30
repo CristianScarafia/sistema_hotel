@@ -8,22 +8,27 @@ from .api_views import (
     EstadisticasView,
     DashboardView,
     AuthView,
+    CsrfTokenView,
     UsuarioViewSet,
     PlanningViewSet,
 )
 
+
 def api_root(request):
     """Endpoint raíz de la API"""
-    return JsonResponse({
-        "message": "Hotel API",
-        "version": "1.0",
-        "endpoints": {
-            "auth": "/api/auth/",
-            "reservas": "/api/reservas/",
-            "habitaciones": "/api/habitaciones/",
-            "usuarios": "/api/usuarios/",
+    return JsonResponse(
+        {
+            "message": "Hotel API",
+            "version": "1.0",
+            "endpoints": {
+                "auth": "/api/auth/",
+                "reservas": "/api/reservas/",
+                "habitaciones": "/api/habitaciones/",
+                "usuarios": "/api/usuarios/",
+            },
         }
-    })
+    )
+
 
 # Configurar el router
 router = DefaultRouter()
@@ -41,6 +46,7 @@ urlpatterns = [
     path("", include(router.urls)),
     # Autenticación
     path("auth/", AuthView.as_view(), name="api_auth"),
+    path("csrf/", CsrfTokenView.as_view(), name="api_csrf"),
     # Rutas personalizadas
     path("estadisticas/", EstadisticasView.as_view(), name="api_estadisticas"),
     path("dashboard/", DashboardView.as_view(), name="api_dashboard"),

@@ -1,5 +1,21 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
+
+// Helper para obtener la URL base de la API
+const getApiUrl = () => {
+  // En Railway, usar la variable de entorno REACT_APP_API_URL
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL.replace('/api', ''); // Remover /api para que sea la base URL
+  }
+  
+  // En desarrollo local
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  
+  // Fallback por defecto
+  return '';
+};
 
 const AuthContext = createContext();
 
@@ -15,48 +31,29 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Configurar axios con credenciales y URL base
-  const getApiUrl = () => {
-    // En Railway, usar la variable de entorno REACT_APP_API_URL
-    if (process.env.REACT_APP_API_URL) {
-      return process.env.REACT_APP_API_URL.replace('/api', ''); // Remover /api para que sea la base URL
-    }
-    
-    // En desarrollo local
-    if (process.env.NODE_ENV === 'development') {
-      return 'http://localhost:8000';
-    }
-    
-    // Fallback por defecto
-    return '';
-  };
+  // Instancia estable de axios con interceptor CSRF
+  const api = useMemo(() => {
+    const instance = axios.create({
+      baseURL: getApiUrl(),
+      withCredentials: true,
+    });
+    instance.interceptors.request.use(
+      (config) => {
+        const csrfToken = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('csrftoken='))
+          ?.split('=')[1];
+        if (csrfToken) {
+          config.headers['X-CSRFToken'] = csrfToken;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+    return instance;
+  }, []);
 
-  const api = axios.create({
-    baseURL: getApiUrl(),
-    withCredentials: true,
-  });
-
-  // Configurar interceptor para manejar CSRF
-  api.interceptors.request.use(
-    (config) => {
-      // Obtener el token CSRF de las cookies
-      const csrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-      
-      if (csrfToken) {
-        config.headers['X-CSRFToken'] = csrfToken;
-      }
-      
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
-    }
-  );
-
-  const getUserProfile = async (userData) => {
+  const getUserProfile = useCallback(async (userData) => {
     try {
       const profileResponse = await api.get('/api/perfiles/mi-perfil/');
       return {
@@ -65,7 +62,6 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (error) {
       console.error('Error getting user profile:', error);
-      // Si no hay perfil, crear uno por defecto con rol supervisor
       return {
         ...userData,
         perfil: { 
@@ -76,7 +72,7 @@ export const AuthProvider = ({ children }) => {
         }
       };
     }
-  };
+  }, [api]);
 
   const checkAuthStatus = useCallback(async () => {
     try {
@@ -94,11 +90,20 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api, getUserProfile]);
 
   useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+    // Primero pedir el token CSRF para que Django setee la cookie en dominios cruzados
+    (async () => {
+      try {
+        await api.get('/api/csrf/');
+      } catch (e) {
+        console.warn('No se pudo obtener CSRF inicialmente:', e.response?.data || e.message);
+      } finally {
+        checkAuthStatus();
+      }
+    })();
+  }, [api, checkAuthStatus]);
 
   const login = async (credentials) => {
     try {
