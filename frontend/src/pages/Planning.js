@@ -28,10 +28,6 @@ const Planning = () => {
   const [planningData, setPlanningData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadPlanning();
-  }, [startDate, loadPlanning]);
-
   const loadPlanning = useCallback(async () => {
     try {
       setLoading(true);
@@ -44,6 +40,10 @@ const Planning = () => {
       setLoading(false);
     }
   }, [startDate]);
+
+  useEffect(() => {
+    loadPlanning();
+  }, [startDate, loadPlanning]);
 
   const formatDate = (dateString) => {
     const date = createSafeDate(dateString);

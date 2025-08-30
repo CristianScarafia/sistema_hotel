@@ -42,13 +42,6 @@ const OcupacionLimpieza = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    console.log('=== USE EFFECT TRIGGERED ===');
-    console.log('User:', user);
-    console.log('Selected date:', selectedDate);
-    loadData();
-  }, [selectedDate, user, loadData]);
-
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -113,6 +106,13 @@ const OcupacionLimpieza = () => {
       setLoading(false);
     }
   }, [selectedDate, user]);
+
+  useEffect(() => {
+    console.log('=== USE EFFECT TRIGGERED ===');
+    console.log('User:', user);
+    console.log('Selected date:', selectedDate);
+    loadData();
+  }, [selectedDate, user, loadData]);
 
   const formatDate = (dateString) => {
     const date = createSafeDate(dateString);
