@@ -32,10 +32,6 @@ const EntradasSalidas = () => {
   const [salidas, setSalidas] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadEntradasSalidas();
-  }, [selectedDate, loadEntradasSalidas]);
-
   const loadEntradasSalidas = useCallback(async () => {
     try {
       setLoading(true);
@@ -63,6 +59,10 @@ const EntradasSalidas = () => {
       setLoading(false);
     }
   }, [selectedDate]);
+
+  useEffect(() => {
+    loadEntradasSalidas();
+  }, [selectedDate, loadEntradasSalidas]);
 
   const formatDate = (dateString) => {
     const date = createSafeDate(dateString);
