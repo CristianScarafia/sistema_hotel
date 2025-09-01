@@ -21,14 +21,14 @@ const Habitaciones = () => {
     { value: 'doble', label: 'Doble' },
     { value: 'simple', label: 'Simple' },
     { value: 'triple', label: 'Triple' },
-    { value: 'suite', label: 'Suite' }
+    { value: 'cuadruple', label: 'Cuadruple' },
+    { value: 'quintuple', label: 'Quintuple' }
   ];
 
   const opcionesPiso = [
     { value: 'planta baja', label: 'Planta Baja' },
     { value: 'primer piso', label: 'Primer Piso' },
     { value: 'segundo piso', label: 'Segundo Piso' },
-    { value: 'tercer piso', label: 'Tercer Piso' }
   ];
 
   useEffect(() => {

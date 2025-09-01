@@ -2,6 +2,8 @@
 import os
 from .base import *  # noqa: F401,F403
 from .base import BASE_DIR
+import os
+import dj_database_url
 
 DEBUG = True
 ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
@@ -9,13 +11,19 @@ ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 # force a non-empty secret for dev to avoid ImproperlyConfigured
 SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-unsafe-secret"
 
-# Use SQLite for local development
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Base de datos: usar DATABASE_URL (PostgreSQL) si está definido; si no, SQLite
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=0),
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 # Configuración de archivos estáticos para desarrollo
 STATICFILES_FINDERS = [

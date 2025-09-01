@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { reservasService, usuariosService, habitacionesService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { FaEdit, FaTrash, FaEye } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaPrint } from 'react-icons/fa';
 
 const Reservas = () => {
   const { user } = useAuth();
   const [reservas, setReservas] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
   const [habitaciones, setHabitaciones] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
@@ -43,11 +45,14 @@ const Reservas = () => {
     loadUsuarios();
   }, []);
 
+  // Importación movida a Configuración
+
   const loadReservas = async () => {
     try {
       setLoading(true);
       const response = await reservasService.getAll();
       setReservas(response.data.results || response.data);
+      setVisibleCount(20);
     } catch (error) {
       toast.error('Error al cargar las reservas');
       console.error('Error:', error);
@@ -151,8 +156,29 @@ const Reservas = () => {
         toast.success('Reserva actualizada exitosamente');
       } else {
         // Crear nueva reserva
-        await reservasService.create(datosParaEnviar);
+        // Asegurar que el CSRF del header coincide con la cookie
+        try {
+          const tokenFromCookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+          if (tokenFromCookie) {
+            // Import lazy to avoid circular
+            const { setCsrfToken } = await import('../services/api');
+            setCsrfToken(tokenFromCookie);
+          }
+        } catch {}
+        const resp = await reservasService.create(datosParaEnviar);
         toast.success('Reserva creada exitosamente');
+        try {
+          const nuevaId = resp?.data?.id;
+          if (nuevaId) {
+            const voucherUrl = reservasService.getVoucherUrl(nuevaId);
+            window.open(voucherUrl, '_blank', 'noopener');
+          }
+        } catch (e) {
+          console.warn('No se pudo abrir el voucher automáticamente:', e);
+        }
       }
 
       // Limpiar formulario y estado de edición
@@ -278,7 +304,7 @@ const Reservas = () => {
       <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Formulario de Nueva Reserva */}
+        {/* Formulario de Nueva Reserva (columna izquierda) */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             {editandoId ? 'Editar Reserva' : 'Nueva Reserva'}
@@ -513,8 +539,8 @@ const Reservas = () => {
               </div>
             </div>
 
-            {/* Botón de envío */}
-            <div className="flex justify-end pt-4 space-x-2">
+            {/* Acciones */}
+            <div className="flex justify-end pt-4 gap-2">
               {editandoId && (
                 <button
                   type="button"
@@ -538,9 +564,7 @@ const Reservas = () => {
                     });
                   }}
                   className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md"
-                >
-                  Cancelar
-                </button>
+                >Cancelar</button>
               )}
               <button
                 type="submit"
@@ -548,17 +572,45 @@ const Reservas = () => {
               >
                 {editandoId ? 'Actualizar Reserva' : 'Guardar Reserva'}
               </button>
+              {/* Importar reservado para Configuración */}
             </div>
           </form>
         </div>
 
         {/* Lista de Reservas */}
         <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">Lista de Reservas</h2>
+            <div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por ID, nombre, apellido o habitación..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
           <div className="divide-y divide-gray-200">
-            {Array.isArray(reservas) && reservas.map((reserva) => (
+            {Array.isArray(reservas) && reservas
+              .filter((r) => {
+                if (!searchQuery) return true;
+                const q = searchQuery.trim().toLowerCase();
+                const idMatch = String(r.id || '').includes(q);
+                const nombre = (r.nombre || '').toLowerCase();
+                const apellido = (r.apellido || '').toLowerCase();
+                const nombreCompleto = (r.nombre_completo || `${r.nombre || ''} ${r.apellido || ''}`).toLowerCase();
+                const habNum = String(r.habitacion_numero || r.habitacion?.numero || '').toLowerCase();
+                return (
+                  idMatch ||
+                  nombre.includes(q) ||
+                  apellido.includes(q) ||
+                  nombreCompleto.includes(q) ||
+                  habNum.includes(q)
+                );
+              })
+              .slice(0, visibleCount)
+              .map((reserva) => (
               <div key={reserva.id} className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -580,6 +632,20 @@ const Reservas = () => {
                     </div>
                   </div>
                   <div className="ml-4 flex space-x-2">
+                    <button 
+                      onClick={() => {
+                        try {
+                          const url = reservasService.getVoucherUrl(reserva.id);
+                          window.open(url, '_blank', 'noopener');
+                        } catch (e) {
+                          console.warn('No se pudo abrir el voucher:', e);
+                        }
+                      }}
+                      className="text-gray-700 hover:text-gray-900 p-1 rounded hover:bg-gray-50"
+                      title="Imprimir voucher"
+                    >
+                      <FaPrint className="h-4 w-4" />
+                    </button>
                     <button 
                       onClick={() => handleVerReserva(reserva)}
                       className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
@@ -611,6 +677,34 @@ const Reservas = () => {
               </div>
             ))}
           </div>
+          {/* Cargar más */}
+          {Array.isArray(reservas) && (
+            (() => {
+              const filteredCount = reservas.filter((r) => {
+                if (!searchQuery) return true;
+                const q = searchQuery.trim().toLowerCase();
+                const idMatch = String(r.id || '').includes(q);
+                const nombre = (r.nombre || '').toLowerCase();
+                const apellido = (r.apellido || '').toLowerCase();
+                const nombreCompleto = (r.nombre_completo || `${r.nombre || ''} ${r.apellido || ''}`).toLowerCase();
+                const habNum = String(r.habitacion_numero || r.habitacion?.numero || '').toLowerCase();
+                return (
+                  idMatch || nombre.includes(q) || apellido.includes(q) || nombreCompleto.includes(q) || habNum.includes(q)
+                );
+              }).length;
+              return visibleCount < filteredCount ? (
+                <div className="px-6 py-4">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((v) => v + 20)}
+                    className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md"
+                  >
+                    Cargar más
+                  </button>
+                </div>
+              ) : null;
+            })()
+          )}
         </div>
       </div>
     </div>

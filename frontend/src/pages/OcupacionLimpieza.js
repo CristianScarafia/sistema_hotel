@@ -323,7 +323,7 @@ const OcupacionLimpieza = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <div className="flex items-center space-x-2">
                       <FaCheck className="h-4 w-4 text-green-600" />
-                      <span>A Limpiar</span>
+                      <span>A Limpio</span>
                     </div>
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -335,7 +335,7 @@ const OcupacionLimpieza = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <div className="flex items-center space-x-2">
                       <FaBroom className="h-4 w-4 text-blue-600" />
-                      <span>A Limpiar + Pasajero</span>
+                      <span>A Limpio + Pasajero</span>
                     </div>
                   </th>
                 </tr>
@@ -398,7 +398,7 @@ const OcupacionLimpieza = () => {
           <div className="flex items-center space-x-3">
             <FaCheck className="h-5 w-5 text-green-600" />
             <div>
-              <span className="text-sm font-medium text-gray-700">A Limpiar</span>
+              <span className="text-sm font-medium text-gray-700">A Limpio</span>
               <p className="text-xs text-gray-500">Se fue el pasajero</p>
             </div>
           </div>
@@ -412,7 +412,7 @@ const OcupacionLimpieza = () => {
           <div className="flex items-center space-x-3">
             <FaBroom className="h-5 w-5 text-blue-600" />
             <div>
-              <span className="text-sm font-medium text-gray-700">A Limpiar + Pasajero</span>
+              <span className="text-sm font-medium text-gray-700">A Limpio + Pasajero</span>
               <p className="text-xs text-gray-500">4ª noche, tiene al menos 1 noche más</p>
             </div>
           </div>

@@ -17,9 +17,7 @@ const TopNavbar = () => {
       <div className="flex items-center justify-between px-6 py-4">
         {/* Left side */}
         <div className="flex items-center space-x-4">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Panel de Control
-          </h2>
+
         </div>
 
         {/* Right side */}

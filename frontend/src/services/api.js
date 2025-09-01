@@ -56,10 +56,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Redirigir al login si no está autenticado
-      window.location.href = '/login';
-    }
+    // Evitar redirecciones automáticas que causan bucles de recarga.
+    // El manejo de 401 se realiza en rutas protegidas y AuthContext.
     return Promise.reject(error);
   }
 );
@@ -74,6 +72,14 @@ export const reservasService = {
   getHoy: () => api.get('/reservas/hoy/'),
   getReservasPorFecha: (fecha) => api.get(`/reservas/por_fecha/?fecha=${fecha}`).then(response => response.data),
   getLimpieza: (fecha) => api.get(`/reservas/limpieza/?fecha=${fecha}`).then(response => response.data),
+  importar: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/reservas/importar/', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  getVoucherUrl: (id) => `${getApiUrl()}/reservas/${id}/voucher/`,
 };
 
 // Servicios de habitaciones

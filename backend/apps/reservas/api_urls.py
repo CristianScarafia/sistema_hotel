@@ -96,5 +96,10 @@ urlpatterns = [
         ReservaViewSet.as_view({"get": "limpieza"}),
         name="api_reservas_limpieza",
     ),
+    path(
+        "reservas/importar/",
+        ReservaViewSet.as_view({"post": "importar"}),
+        name="api_reservas_importar",
+    ),
     # La acción mi-perfil ahora está registrada via @action(url_path='mi-perfil') en el ViewSet
 ]

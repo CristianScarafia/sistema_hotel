@@ -61,8 +61,40 @@ class ReservaSerializer(serializers.ModelSerializer):
         habitacion_id = validated_data.pop("habitacion_id")
         habitacion = Habitacion.objects.get(id=habitacion_id)
 
+        # Validar solapamiento con fechas
+        fecha_ingreso = validated_data["fecha_ingreso"]
+        fecha_egreso = validated_data["fecha_egreso"]
+        if Reserva.objects.filter(
+            nhabitacion=habitacion,
+            fecha_ingreso__lt=fecha_egreso,
+            fecha_egreso__gt=fecha_ingreso,
+        ).exists():
+            raise serializers.ValidationError(
+                {
+                    "non_field_errors": [
+                        f"Solapamiento: ya existe una reserva en {habitacion.numero} en ese rango"
+                    ]
+                }
+            )
+
+        # Validar duplicado exacto
+        if Reserva.objects.filter(
+            nhabitacion=habitacion,
+            nombre=validated_data.get("nombre"),
+            apellido=validated_data.get("apellido"),
+            fecha_ingreso=fecha_ingreso,
+            fecha_egreso=fecha_egreso,
+        ).exists():
+            raise serializers.ValidationError(
+                {
+                    "non_field_errors": [
+                        "Reserva duplicada para el mismo huésped, habitación y fechas"
+                    ]
+                }
+            )
+
         # Calcular noches
-        noches = (validated_data["fecha_egreso"] - validated_data["fecha_ingreso"]).days
+        noches = (fecha_egreso - fecha_ingreso).days
         validated_data["noches"] = noches
 
         # Calcular precio por noche

@@ -23,6 +23,34 @@ from .serializers import (
     ReservaCreateSerializer,
     UsuarioListSerializer,
 )
+import csv
+import os
+import io
+from typing import Any, Dict, List
+from django.http import HttpResponse, Http404
+from django.conf import settings
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.utils import ImageReader
+
+try:
+    from openpyxl import load_workbook
+except Exception:  # pragma: no cover
+    load_workbook = None
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    """SessionAuthentication que no aplica verificación CSRF.
+
+    Útil para endpoints específicos con multipart/form-data (uploads) en SPA.
+    """
+
+    def enforce_csrf(self, request):  # pragma: no cover
+        return  # No-op: deshabilitar CSRF para esta autenticación
 
 
 def is_supervisor(user):
@@ -176,7 +204,8 @@ class FixAdminView(APIView):
 class HabitacionViewSet(viewsets.ModelViewSet):
     """ViewSet para el modelo Habitacion"""
 
-    queryset = Habitacion.objects.all()
+    # Orden estable para evitar que elementos "desaparezcan" de la primera página al editar
+    queryset = Habitacion.objects.all().order_by("id")
     serializer_class = HabitacionSerializer
     permission_classes = [permissions.IsAuthenticated]  # Requerir autenticación
 
@@ -267,7 +296,12 @@ class ReservaViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]  # Requerir autenticación
 
     def get_serializer_class(self):
-        if self.action == "list":
+        if self.action in [
+            "list",
+            "hoy",
+            "checkins_hoy",
+            "checkouts_hoy",
+        ]:
             return ReservaListSerializer
         elif self.action == "create":
             return ReservaCreateSerializer
@@ -299,6 +333,170 @@ class ReservaViewSet(viewsets.ModelViewSet):
         """Verificar si el usuario es supervisor"""
         return is_supervisor(user)
 
+    def create(self, request, *args, **kwargs):
+        """Crear reserva devolviendo el objeto completo con id"""
+        create_serializer = ReservaCreateSerializer(data=request.data)
+        create_serializer.is_valid(raise_exception=True)
+        reserva = create_serializer.save()
+        output_serializer = ReservaSerializer(reserva)
+        headers = self.get_success_headers(output_serializer.data)
+        return Response(
+            output_serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+    @action(detail=True, methods=["get"], url_path="voucher")
+    def voucher(self, request, pk=None):
+        """Genera y devuelve un voucher PDF para la reserva"""
+        try:
+            reserva = Reserva.objects.select_related("nhabitacion").get(pk=pk)
+        except Reserva.DoesNotExist:
+            raise Http404("Reserva no encontrada")
+
+        # Preparar respuesta PDF
+        response = HttpResponse(content_type="application/pdf")
+        filename = f"voucher_reserva_{reserva.id}.pdf"
+        response["Content-Disposition"] = f'inline; filename="{filename}"'
+
+        # Construcción del PDF con ReportLab (Platypus)
+        doc = SimpleDocTemplate(
+            response,
+            pagesize=A4,
+            leftMargin=18 * mm,
+            rightMargin=18 * mm,
+            topMargin=18 * mm,
+            bottomMargin=18 * mm,
+        )
+
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Encabezado estilizado
+        titulo = Paragraph(
+            "<para align='center'><b>Voucher de Reserva</b></para>", styles["Title"]
+        )
+        subtitulo = Paragraph(
+            f"<para align='center'>Reserva #{reserva.id} · Habitación {reserva.nhabitacion.numero} ({reserva.nhabitacion.tipo})</para>",
+            styles["Normal"],
+        )
+        elements.extend([titulo, Spacer(1, 6), subtitulo, Spacer(1, 12)])
+
+        # Callback para dibujar logo en esquina superior derecha
+        def draw_header(canvas_obj, doc_obj):
+            try:
+                logo_path = os.path.join(
+                    settings.BASE_DIR, "staticfiles", "images", "logo.png"
+                )
+                if os.path.exists(logo_path):
+                    img = ImageReader(logo_path)
+                    desired_width = 35 * mm
+                    iw, ih = img.getSize()
+                    scale = desired_width / float(iw)
+                    desired_height = ih * scale
+                    x = doc_obj.pagesize[0] - doc_obj.rightMargin - desired_width
+                    y = doc_obj.pagesize[1] - doc_obj.topMargin - desired_height
+                    canvas_obj.drawImage(
+                        img,
+                        x,
+                        y,
+                        width=desired_width,
+                        height=desired_height,
+                        preserveAspectRatio=True,
+                        mask="auto",
+                    )
+            except Exception as e:
+                # No interrumpir por errores de imagen
+                pass
+
+        # Datos del huésped
+        huesped_data = [
+            ["Nombre", f"{reserva.nombre} {reserva.apellido}"],
+            ["Teléfono", reserva.telefono],
+            ["Origen", reserva.origen],
+            ["Encargado", reserva.encargado],
+        ]
+
+        fechas_data = [
+            ["Fecha de ingreso", reserva.fecha_ingreso.strftime("%d/%m/%Y")],
+            ["Fecha de salida", reserva.fecha_egreso.strftime("%d/%m/%Y")],
+            ["Noches", str(reserva.noches)],
+            ["Personas", str(reserva.personas)],
+        ]
+
+        montos_data = [
+            ["Monto total", f"$ {reserva.monto_total:,.2f}".replace(",", ".")],
+            ["Seña", f"$ {reserva.senia:,.2f}".replace(",", ".")],
+            ["Resto", f"$ {reserva.resto:,.2f}".replace(",", ".")],
+            [
+                "Precio por noche",
+                f"$ {reserva.precio_por_noche:,.2f}".replace(",", "."),
+            ],
+        ]
+
+        def build_table(title: str, data: list) -> Table:
+            header = Paragraph(f"<b>{title}</b>", styles["Heading3"])
+            elements.extend([header, Spacer(1, 6)])
+            table = Table(data, colWidths=[60 * mm, 100 * mm])
+            table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 10),
+                        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+                        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f9fafb")),
+                        (
+                            "ROWBACKGROUNDS",
+                            (0, 1),
+                            (-1, -1),
+                            [colors.HexColor("#ffffff"), colors.HexColor("#f3f4f6")],
+                        ),
+                        ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#e5e7eb")),
+                        (
+                            "INNERGRID",
+                            (0, 0),
+                            (-1, -1),
+                            0.5,
+                            colors.HexColor("#e5e7eb"),
+                        ),
+                    ]
+                )
+            )
+            return table
+
+        # Construir tablas
+        elements.append(build_table("Datos del huésped", huesped_data))
+        elements.append(Spacer(1, 10))
+        elements.append(build_table("Estadía", fechas_data))
+        elements.append(Spacer(1, 10))
+        elements.append(build_table("Montos", montos_data))
+        elements.append(Spacer(1, 14))
+
+        # Notas importantes
+        notas = [
+            "Check-in a partir de las 12:00 del mediodía.",
+            "Check-out a las 10:00 de la mañana.",
+            "La totalidad de la reserva debe estar abonada para ingresar a la habitación.",
+        ]
+        for nota in notas:
+            elements.append(
+                Paragraph(f"<font color='#111827'>• {nota}</font>", styles["Normal"])
+            )
+            elements.append(Spacer(1, 4))
+
+        # Observaciones
+        if reserva.observaciones:
+            elements.append(Spacer(1, 6))
+            elements.append(Paragraph("<b>Observaciones</b>", styles["Heading3"]))
+            elements.append(Spacer(1, 4))
+            elements.append(Paragraph(reserva.observaciones, styles["Normal"]))
+
+        # Renderizar
+        doc.build(elements, onFirstPage=draw_header, onLaterPages=draw_header)
+
+        return response
+
     @action(detail=False, methods=["get"])
     def hoy(self, request):
         """Obtener reservas de hoy"""
@@ -322,6 +520,260 @@ class ReservaViewSet(viewsets.ModelViewSet):
         reservas = Reserva.objects.filter(fecha_egreso=hoy)
         serializer = self.get_serializer(reservas, many=True)
         return Response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="importar",
+        permission_classes=[permissions.IsAuthenticated],
+        authentication_classes=[CsrfExemptSessionAuthentication],
+    )
+    def importar(self, request):
+        """Importar reservas desde archivo CSV o Excel (.xlsx).
+
+        Espera un campo 'file' en multipart/form-data.
+        Crea habitaciones inexistentes automáticamente.
+        Devuelve un resumen de la importación.
+        """
+        if not self._is_supervisor(request.user):
+            return Response(
+                {"error": "Acceso denegado. Solo supervisores pueden importar."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        uploaded = request.FILES.get("file")
+        if not uploaded:
+            return Response(
+                {"error": "Archivo 'file' requerido"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        filename = getattr(uploaded, "name", "").lower()
+        ext = os.path.splitext(filename)[1]
+
+        try:
+            if ext == ".csv" or uploaded.content_type in (
+                "text/csv",
+                "application/csv",
+            ):
+                data = uploaded.read().decode("utf-8", errors="ignore")
+                rows = self._read_csv(io.StringIO(data))
+            elif ext in (".xlsx", ".xlsm") or (
+                uploaded.content_type
+                in (
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "application/vnd.ms-excel",
+                )
+            ):
+                if load_workbook is None:
+                    return Response(
+                        {"error": "openpyxl no instalado en el servidor"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+                rows = self._read_xlsx(uploaded)
+            else:
+                return Response(
+                    {"error": "Formato no soportado. Use .csv o .xlsx"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        finally:
+            try:
+                uploaded.seek(0)
+            except Exception:
+                pass
+
+        resumen = {
+            "procesadas": 0,
+            "creadas": 0,
+            "errores": 0,
+            "habitaciones_creadas": 0,
+            "detalles_error": [],
+        }
+
+        for row in rows:
+            resumen["procesadas"] += 1
+            try:
+                normalized = self._normalize_row(row)
+
+                habitacion, hab_created = Habitacion.objects.get_or_create(
+                    numero=normalized["habitacion_numero"],
+                    defaults={
+                        "tipo": normalized.get("habitacion_tipo", "doble"),
+                        "piso": normalized.get("habitacion_piso", "planta baja"),
+                    },
+                )
+                if hab_created:
+                    resumen["habitaciones_creadas"] += 1
+
+                fecha_ingreso = self._parse_date(
+                    normalized["check_in"]
+                )  # dd/mm/YYYY o YYYY-MM-DD
+                fecha_egreso = self._parse_date(normalized["check_out"])  # idem
+
+                # Validar solapamiento
+                if Reserva.objects.filter(
+                    nhabitacion=habitacion,
+                    fecha_ingreso__lt=fecha_egreso,
+                    fecha_egreso__gt=fecha_ingreso,
+                ).exists():
+                    raise ValueError(
+                        f"Solapamiento: ya existe una reserva en {habitacion.numero} entre {fecha_ingreso} y {fecha_egreso}"
+                    )
+
+                # Duplicado exacto
+                if Reserva.objects.filter(
+                    nhabitacion=habitacion,
+                    nombre=normalized["nombre"],
+                    apellido=normalized["apellido"],
+                    fecha_ingreso=fecha_ingreso,
+                    fecha_egreso=fecha_egreso,
+                ).exists():
+                    raise ValueError(
+                        f"Duplicada: {normalized['nombre']} {normalized['apellido']} en {habitacion.numero} con mismas fechas"
+                    )
+
+                # Crear reserva (cálculos automáticos en model.save)
+                Reserva.objects.create(
+                    encargado=normalized.get("encargado", "Desconocido")
+                    or "Desconocido",
+                    nhabitacion=habitacion,
+                    nombre=normalized["nombre"],
+                    apellido=normalized["apellido"],
+                    personas=int(normalized.get("personas", 1) or 1),
+                    fecha_ingreso=fecha_ingreso,
+                    fecha_egreso=fecha_egreso,
+                    monto_total=self._parse_number(normalized.get("monto_total", 0)),
+                    senia=self._parse_number(normalized.get("senia", 0)),
+                    resto=self._parse_number(normalized.get("resto", 0)),
+                    cantidad_habitaciones=int(
+                        normalized.get("cantidad_habitaciones", 1) or 1
+                    ),
+                    telefono=str(normalized.get("telefono", "")),
+                    celiacos=self._parse_bool(normalized.get("celiacos")),
+                    observaciones=str(normalized.get("observaciones", "")),
+                    origen=str(normalized.get("origen", "")),
+                )
+                resumen["creadas"] += 1
+            except Exception as e:
+                resumen["errores"] += 1
+                nombre = row.get("Nombre") or row.get("nombre") or "?"
+                apellido = row.get("Apellido") or row.get("apellido") or "?"
+                resumen["detalles_error"].append(f"{nombre} {apellido}: {e}")
+
+        return Response(resumen)
+
+    # ==== Helpers de importación ====
+    def _read_csv(self, io_stream) -> List[Dict[str, Any]]:
+        reader = csv.DictReader(io_stream)
+        return list(reader)
+
+    def _read_xlsx(self, file_obj) -> List[Dict[str, Any]]:
+        wb = load_workbook(file_obj, data_only=True)
+        ws = wb.active
+        headers = [
+            str(cell.value).strip() if cell.value is not None else ""
+            for cell in next(ws.iter_rows(min_row=1, max_row=1))
+        ]
+        rows: List[Dict[str, Any]] = []
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            item: Dict[str, Any] = {}
+            for i, header in enumerate(headers):
+                item[header] = row[i] if i < len(row) else None
+            rows.append(item)
+        return rows
+
+    def _normalize_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
+        mapping = {
+            "Habitación": "habitacion_numero",
+            "Habitacion": "habitacion_numero",
+            "habitación": "habitacion_numero",
+            "Numero": "habitacion_numero",
+            "Número": "habitacion_numero",
+            "Tipo": "habitacion_tipo",
+            "Piso": "habitacion_piso",
+            "Check-In": "check_in",
+            "Check In": "check_in",
+            "Ingreso": "check_in",
+            "Entrada": "check_in",
+            "Check-Out": "check_out",
+            "Check Out": "check_out",
+            "Egreso": "check_out",
+            "Salida": "check_out",
+            "Nombre": "nombre",
+            "Apellido": "apellido",
+            "Personas": "personas",
+            "Noches": "noches",
+            "Precio por noche": "precio_por_noche",
+            "Monto total": "monto_total",
+            "Seña": "senia",
+            "Senia": "senia",
+            "Resto": "resto",
+            "Cantidad\nde habitaciones": "cantidad_habitaciones",
+            "Cantidad de habitaciones": "cantidad_habitaciones",
+            "Telefono": "telefono",
+            "Teléfono": "telefono",
+            "Celiacos": "celiacos",
+            "Observasiones": "observaciones",
+            "Observaciones": "observaciones",
+            "Origen": "origen",
+            "Encargado": "encargado",
+        }
+
+        normalized: Dict[str, Any] = {}
+        for k, v in row.items():
+            key = mapping.get(str(k).strip(), str(k).strip())
+            normalized[key] = v
+
+        required = [
+            "habitacion_numero",
+            "nombre",
+            "apellido",
+            "check_in",
+            "check_out",
+            "monto_total",
+            "senia",
+            "origen",
+        ]
+        missing = [r for r in required if not normalized.get(r)]
+        if missing:
+            raise ValueError(
+                f"Faltan columnas/valores requeridos: {', '.join(missing)}"
+            )
+        return normalized
+
+    def _parse_date(self, value: Any) -> date:
+        if value is None or value == "":
+            raise ValueError("Fecha vacía")
+        if hasattr(value, "date"):
+            try:
+                return value.date()
+            except Exception:
+                pass
+        s = str(value).strip()
+        for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(s, fmt).date()
+            except ValueError:
+                continue
+        raise ValueError(f"Formato de fecha inválido: {value}")
+
+    def _parse_bool(self, value: Any) -> bool:
+        if value is None:
+            return False
+        s = str(value).strip().lower()
+        return s in ("si", "sí", "true", "1", "x", "s", "t")
+
+    def _parse_number(self, value: Any) -> float:
+        if value is None or value == "":
+            return 0.0
+        if isinstance(value, (int, float)):
+            return float(value)
+        s = str(value)
+        s = s.replace("$", "").replace(".", "").replace(",", ".")
+        try:
+            return float(s)
+        except ValueError:
+            return 0.0
 
     @action(detail=False, methods=["get"])
     def por_fecha(self, request):

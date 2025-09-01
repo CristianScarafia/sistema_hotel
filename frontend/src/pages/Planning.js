@@ -81,13 +81,24 @@ const Planning = () => {
     return colors[tipo] || 'bg-gray-100 text-gray-800';
   };
 
-  const getOcupacionClass = (ocupacion) => {
+  const getLibreBgByTipo = (tipo) => {
+    const bg = {
+      'doble': 'bg-blue-50',
+      'triple': 'bg-green-50',
+      'cuadruple': 'bg-yellow-50',
+      'quintuple': 'bg-purple-50',
+    };
+    return bg[tipo] || 'bg-gray-50';
+  };
+
+  const getOcupacionClass = (ocupacion, tipo) => {
     if (ocupacion.is_occupied) {
-      return ocupacion.is_last_night 
-        ? 'bg-red-200 border-r-2 border-red-500' 
+      return ocupacion.is_last_night
+        ? 'bg-red-200 border-r-2 border-red-500'
         : 'bg-red-100';
     }
-    return 'bg-green-50';
+    // Libre: color según tipo de habitación
+    return getLibreBgByTipo(tipo);
   };
 
   if (loading) {
@@ -147,17 +158,17 @@ const Planning = () => {
       {/* Tabla de Planning */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full">
+          <table className="min-w-full table-fixed">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 w-[100px] leading-tight">
                   Habitación
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[100px] bg-gray-50 z-10">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[100px] bg-gray-50 z-10 w-[100px] leading-tight">
                   Tipo
                 </th>
                 {planningData.days.map((day, index) => (
-                  <th key={index} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[60px]">
+                  <th key={index} className="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[60px] w-16 leading-tight">
                     {formatDate(day)}
                   </th>
                 ))}
@@ -166,25 +177,25 @@ const Planning = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {planningData.planning.map((item, rowIndex) => (
                 <tr key={item.habitacion.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
+                  <td className="px-3 py-1 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10 w-[100px] leading-tight">
                     <div className="flex items-center space-x-2">
                       <FaBed className="h-4 w-4 text-gray-400" />
                       <span>{item.habitacion.numero}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap sticky left-[100px] bg-white z-10">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTipoColor(item.habitacion.tipo)}`}>
+                  <td className="px-3 py-1 whitespace-nowrap sticky left-[100px] bg-white z-10 w-[100px] leading-tight">
+                    <span className={`inline-flex px-1 py-0.5 text-[10px] font-semibold rounded-full ${getTipoColor(item.habitacion.tipo)}`}>
                       {item.habitacion.tipo}
                     </span>
                   </td>
                   {item.ocupaciones.map((ocupacion, colIndex) => (
                     <td 
                       key={colIndex} 
-                      className={`px-2 py-2 text-center text-xs border-r border-gray-200 ${getOcupacionClass(ocupacion)}`}
+                      className={`px-1 py-1 text-center text-[11px] border-r border-gray-200 w-16 overflow-hidden leading-tight ${getOcupacionClass(ocupacion, item.habitacion.tipo)}`}
                       title={ocupacion.nombre ? `${ocupacion.nombre} - ${ocupacion.fecha_ingreso} a ${ocupacion.fecha_egreso}` : 'Disponible'}
                     >
                       {ocupacion.nombre && (
-                        <div className="truncate font-medium text-gray-900">
+                        <div className="truncate font-medium text-gray-900 w-full">
                           {ocupacion.nombre}
                         </div>
                       )}
