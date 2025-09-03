@@ -105,3 +105,13 @@ export const getRoomStatusText = (status) => {
   };
   return texts[status] || 'Desconocido';
 };
+
+// Formateo de nombres a Título (convierte todo a minúsculas y capitaliza cada palabra)
+export const toTitleCase = (value) => {
+  if (!value || typeof value !== 'string') return '';
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : ''))
+    .join(' ');
+};

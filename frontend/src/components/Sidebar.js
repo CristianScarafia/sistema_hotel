@@ -10,10 +10,11 @@ import {
   FaCog,
   FaSignInAlt,
   FaCalendarCheck,
-  FaBroom
+  FaBroom,
+  FaTimes
 } from 'react-icons/fa';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen = true, onClose }) => {
   const location = useLocation();
   const { user } = useAuth();
 
@@ -26,12 +27,12 @@ const Sidebar = () => {
   // const isSupervisor = getUserRole() === 'supervisor';
 
   const menuItems = [
-    { path: '/', icon: FaHome, label: 'Dashboard', exact: true, roles: ['conserge', 'supervisor'] },
-    { path: '/reservas', icon: FaCalendarAlt, label: 'Reservas', roles: ['conserge', 'supervisor'] },
-    { path: '/habitaciones', icon: FaBed, label: 'Habitaciones', roles: ['conserge', 'supervisor'] },
-    { path: '/entradas-salidas', icon: FaSignInAlt, label: 'Entradas y Salidas', roles: ['conserge', 'supervisor'] },
+    { path: '/', icon: FaHome, label: 'Inicio', exact: true, roles: ['conserge', 'supervisor'] },
     { path: '/planning', icon: FaCalendarCheck, label: 'Disponibilidad', roles: ['conserge', 'supervisor'] },
+    { path: '/reservas', icon: FaCalendarAlt, label: 'Reservas', roles: ['conserge', 'supervisor'] },
+    { path: '/entradas-salidas', icon: FaSignInAlt, label: 'Entradas y Salidas', roles: ['conserge', 'supervisor'] },
     { path: '/ocupacion-limpieza', icon: FaBroom, label: 'Ocupación y Limpieza', roles: ['conserge', 'supervisor'] },
+    { path: '/habitaciones', icon: FaBed, label: 'Habitaciones', roles: ['conserge', 'supervisor'] },
     { path: '/usuarios', icon: FaUsers, label: 'Usuarios', roles: ['supervisor'] },
     { path: '/estadisticas', icon: FaChartBar, label: 'Estadísticas', roles: ['supervisor'] },
     { path: '/configuracion', icon: FaCog, label: 'Configuración', roles: ['supervisor'] },
@@ -50,7 +51,12 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="relative w-64 min-h-screen flex flex-col text-white bg-gradient-to-b from-gray-900 via-gray-900/95 to-gray-900 border-r border-white/10 shadow-xl">
+    <div
+      className={`fixed z-40 inset-y-0 left-0 transform transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      } w-64 min-h-screen flex flex-col text-white bg-gradient-to-b from-gray-900 via-gray-900/95 to-gray-900 border-r border-white/10 shadow-xl bg-fixed bg-cover bg-no-repeat`}
+      style={{ backgroundAttachment: 'fixed' }}
+    >
       {/* Accento superior sutil */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
@@ -64,6 +70,18 @@ const Sidebar = () => {
           />
         </div>
       </div>
+
+      {/* (Animación/3D removido temporalmente) */}
+
+      {/* Botón cerrar (móvil y también visible en desktop según necesidad) */}
+      <button
+        type="button"
+        aria-label="Cerrar menú lateral"
+        onClick={onClose}
+        className="absolute top-3 right-3 p-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30"
+      >
+        <FaTimes className="h-5 w-5" />
+      </button>
 
       {/* Navigation Menu */}
       <nav className="flex-1 p-4">

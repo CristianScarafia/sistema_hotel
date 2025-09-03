@@ -6,6 +6,7 @@ from .api_views import (
     ReservaViewSet,
     PerfilUsuarioViewSet,
     EstadisticasView,
+    EstadisticasKpiView,
     DashboardView,
     AuthView,
     CsrfTokenView,
@@ -51,6 +52,11 @@ urlpatterns = [
     path("fix-admin/", FixAdminView.as_view(), name="api_fix_admin"),
     # Rutas personalizadas
     path("estadisticas/", EstadisticasView.as_view(), name="api_estadisticas"),
+    path(
+        "estadisticas/kpis/",
+        EstadisticasKpiView.as_view(),
+        name="api_estadisticas_kpis",
+    ),
     path("dashboard/", DashboardView.as_view(), name="api_dashboard"),
     # Endpoints adicionales
     path(

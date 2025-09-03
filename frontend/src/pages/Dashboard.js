@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { estadisticasService } from '../services/api';
-import { FaBed, FaUsers, FaCalendarCheck, FaCalendarTimes, FaDollarSign } from 'react-icons/fa';
-import { formatCurrency, formatDate } from '../utils/hotelUtils';
+import { FaBed, FaUsers, FaCalendarCheck, FaCalendarTimes } from 'react-icons/fa';
+import { formatCurrency, formatDate, toTitleCase } from '../utils/hotelUtils';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
   const [estadisticas, setEstadisticas] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     loadDashboardData();
@@ -101,8 +103,8 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Ingresos Totales */}
-      {estadisticas && (
+      {/* Ingresos Totales - solo supervisores */}
+      {estadisticas && user?.perfil?.rol === 'supervisor' && (
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
@@ -110,8 +112,7 @@ const Dashboard = () => {
               <p className="text-sm text-gray-600">Total acumulado de todas las reservas</p>
             </div>
             <div className="flex items-center">
-              <FaDollarSign className="h-8 w-8 text-green-600" />
-              <span className="ml-2 text-3xl font-bold text-green-600">
+              <span className="text-3xl font-bold text-green-600">
                 {formatCurrency(estadisticas.ingresos_totales)}
               </span>
             </div>
@@ -130,6 +131,9 @@ const Dashboard = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Número de reserva
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Cliente
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -146,9 +150,10 @@ const Dashboard = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {dashboard.ultimas_reservas.map((reserva) => (
                   <tr key={reserva.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reserva.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {reserva.nombre_completo}
+                        {toTitleCase(reserva.nombre_completo)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

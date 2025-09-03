@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { reservasService, usuariosService, habitacionesService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { FaEdit, FaTrash, FaEye, FaPrint } from 'react-icons/fa';
+import { toTitleCase } from '../utils/hotelUtils';
 
 const Reservas = () => {
   const { user } = useAuth();
@@ -11,6 +12,7 @@ const Reservas = () => {
   const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
   const [habitaciones, setHabitaciones] = useState([]);
+  const [habitacionesFiltradas, setHabitacionesFiltradas] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [editandoId, setEditandoId] = useState(null); // Para controlar si estamos editando
   const [formData, setFormData] = useState({
@@ -30,20 +32,42 @@ const Reservas = () => {
     observaciones: ''
   });
 
-  // Opciones predefinidas para origen
-  const opcionesOrigen = [
-    { value: 'Booking', label: 'Booking' },
-    { value: 'celular', label: 'Celular' },
-    { value: 'calle', label: 'Calle' },
-    { value: 'sindicato', label: 'Sindicato' },
-    { value: 'agencia', label: 'Agencia' }
-  ];
-
+  
   useEffect(() => {
     loadReservas();
     loadHabitaciones();
     loadUsuarios();
   }, []);
+
+  // Refrescar habitaciones filtradas cuando cambian fechas o personas
+  useEffect(() => {
+    const { fecha_ingreso, fecha_egreso, personas } = formData;
+    if (fecha_ingreso && fecha_egreso && personas) {
+      habitacionesService
+        .getDisponibles({
+          fecha_ingreso,
+          fecha_egreso,
+          personas,
+        })
+        .then((resp) => {
+          const data = resp.data?.results || resp.data || [];
+          setHabitacionesFiltradas(Array.isArray(data) ? data : []);
+          // Si la habitación seleccionada ya no está, limpiarla
+          if (
+            formData.nhabitacion &&
+            !data.some((h) => String(h.id) === String(formData.nhabitacion))
+          ) {
+            setFormData((prev) => ({ ...prev, nhabitacion: '' }));
+          }
+        })
+        .catch(() => {
+          setHabitacionesFiltradas([]);
+        });
+    } else {
+      // Si no hay criterios suficientes, mostrar lista completa
+      setHabitacionesFiltradas(habitaciones);
+    }
+  }, [formData, habitaciones]);
 
   // Importación movida a Configuración
 
@@ -69,16 +93,20 @@ const Reservas = () => {
       // Verificar si la respuesta es un array o tiene la estructura esperada
       if (Array.isArray(data)) {
         setHabitaciones(data);
+        setHabitacionesFiltradas(data);
       } else if (data.results && Array.isArray(data.results)) {
         setHabitaciones(data.results);
+        setHabitacionesFiltradas(data.results);
       } else {
         // Si la estructura es inesperada, establecer array vacío
         console.warn('Estructura de respuesta inesperada para habitaciones:', data);
         setHabitaciones([]);
+        setHabitacionesFiltradas([]);
       }
     } catch (error) {
       console.error('Error al cargar habitaciones:', error);
       setHabitaciones([]);
+      setHabitacionesFiltradas([]);
     }
   };
 
@@ -311,9 +339,9 @@ const Reservas = () => {
           </h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Grupo 1: Información básica */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
+            {/* Grupo 1: Encargado + Fechas */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Encargado <span className="text-red-500">*</span>
                 </label>
@@ -334,41 +362,29 @@ const Reservas = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Habitación <span className="text-red-500">*</span>
+                  Fecha de Ingreso <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="nhabitacion"
-                  value={formData.nhabitacion}
+                <input
+                  type="date"
+                  name="fecha_ingreso"
+                  value={formData.fecha_ingreso}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
-                >
-                  <option value="">Seleccionar habitación</option>
-                  {Array.isArray(habitaciones) && habitaciones.map(habitacion => (
-                    <option key={habitacion.id} value={habitacion.id}>
-                      {habitacion.numero} - {habitacion.tipo}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Origen <span className="text-red-500">*</span>
+                  Fecha de Egreso <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="origen"
-                  value={formData.origen}
+                <input
+                  type="date"
+                  name="fecha_egreso"
+                  value={formData.fecha_egreso}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
-                >
-                  <option value="">Seleccionar origen</option>
-                  {opcionesOrigen.map(opcion => (
-                    <option key={opcion.value} value={opcion.value}>
-                      {opcion.label}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
@@ -415,33 +431,55 @@ const Reservas = () => {
               </div>
             </div>
 
-            {/* Grupo 3: Fechas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Grupo 3: Personas + Cantidad de Habitaciones */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de Ingreso <span className="text-red-500">*</span>
+                  Número de Personas <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="date"
-                  name="fecha_ingreso"
-                  value={formData.fecha_ingreso}
+                  type="number"
+                  name="personas"
+                  value={formData.personas}
                   onChange={handleInputChange}
+                  min="1"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de Egreso <span className="text-red-500">*</span>
+                  Cantidad de Habitaciones <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="date"
-                  name="fecha_egreso"
-                  value={formData.fecha_egreso}
+                  type="number"
+                  name="cantidad_habitaciones"
+                  value={formData.cantidad_habitaciones}
                   onChange={handleInputChange}
+                  min="1"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Habitación <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="nhabitacion"
+                  value={formData.nhabitacion}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={!formData.fecha_ingreso || !formData.fecha_egreso || !formData.personas}
+                >
+                  <option value="">{!formData.fecha_ingreso || !formData.fecha_egreso || !formData.personas ? 'Seleccione encargado, fechas y personas' : 'Seleccionar habitación'}</option>
+                  {Array.isArray(habitacionesFiltradas) && habitacionesFiltradas.map(habitacion => (
+                    <option key={habitacion.id} value={habitacion.id}>
+                      {habitacion.numero} - {habitacion.tipo}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -591,91 +629,99 @@ const Reservas = () => {
               />
             </div>
           </div>
-          <div className="divide-y divide-gray-200">
-            {Array.isArray(reservas) && reservas
-              .filter((r) => {
-                if (!searchQuery) return true;
-                const q = searchQuery.trim().toLowerCase();
-                const idMatch = String(r.id || '').includes(q);
-                const nombre = (r.nombre || '').toLowerCase();
-                const apellido = (r.apellido || '').toLowerCase();
-                const nombreCompleto = (r.nombre_completo || `${r.nombre || ''} ${r.apellido || ''}`).toLowerCase();
-                const habNum = String(r.habitacion_numero || r.habitacion?.numero || '').toLowerCase();
-                return (
-                  idMatch ||
-                  nombre.includes(q) ||
-                  apellido.includes(q) ||
-                  nombreCompleto.includes(q) ||
-                  habNum.includes(q)
-                );
-              })
-              .slice(0, visibleCount)
-              .map((reserva) => (
-              <div key={reserva.id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-900">
-                        {reserva.nombre_completo || `${reserva.nombre} ${reserva.apellido}`}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Habitación {reserva.habitacion_numero || reserva.habitacion?.numero}
-                      </p>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <p className="text-sm text-gray-500">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número de reserva</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Habitación</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fechas</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {Array.isArray(reservas) && reservas
+                  .filter((r) => {
+                    if (!searchQuery) return true;
+                    const q = searchQuery.trim().toLowerCase();
+                    const idMatch = String(r.id || '').includes(q);
+                    const nombre = (r.nombre || '').toLowerCase();
+                    const apellido = (r.apellido || '').toLowerCase();
+                    const nombreCompleto = (r.nombre_completo || `${r.nombre || ''} ${r.apellido || ''}`).toLowerCase();
+                    const habNum = String(r.habitacion_numero || r.habitacion?.numero || '').toLowerCase();
+                    return (
+                      idMatch ||
+                      nombre.includes(q) ||
+                      apellido.includes(q) ||
+                      nombreCompleto.includes(q) ||
+                      habNum.includes(q)
+                    );
+                  })
+                  .slice(0, visibleCount)
+                  .map((reserva) => (
+                    <tr key={reserva.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reserva.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {toTitleCase(reserva.nombre_completo || `${reserva.nombre} ${reserva.apellido}`)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {reserva.habitacion_numero || reserva.habitacion?.numero}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(reserva.fecha_ingreso).toLocaleDateString()} - {new Date(reserva.fecha_egreso).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm font-medium text-green-600">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
                         ${parseFloat(reserva.monto_total).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="ml-4 flex space-x-2">
-                    <button 
-                      onClick={() => {
-                        try {
-                          const url = reservasService.getVoucherUrl(reserva.id);
-                          window.open(url, '_blank', 'noopener');
-                        } catch (e) {
-                          console.warn('No se pudo abrir el voucher:', e);
-                        }
-                      }}
-                      className="text-gray-700 hover:text-gray-900 p-1 rounded hover:bg-gray-50"
-                      title="Imprimir voucher"
-                    >
-                      <FaPrint className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleVerReserva(reserva)}
-                      className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
-                      title="Ver detalles"
-                    >
-                      <FaEye className="h-4 w-4" />
-                    </button>
-                    {/* Solo mostrar botones de editar y eliminar para supervisores */}
-                    {user?.perfil?.rol === 'supervisor' && (
-                      <>
-                        <button 
-                          onClick={() => handleEditarReserva(reserva)}
-                          className="text-yellow-600 hover:text-yellow-800 p-1 rounded hover:bg-yellow-50"
-                          title="Editar reserva"
-                        >
-                          <FaEdit className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleEliminarReserva(reserva)}
-                          className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
-                          title="Eliminar reserva"
-                        >
-                          <FaTrash className="h-4 w-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="ml-4 flex justify-end space-x-2">
+                          <button 
+                            onClick={() => {
+                              try {
+                                const url = reservasService.getVoucherUrl(reserva.id);
+                                window.open(url, '_blank', 'noopener');
+                              } catch (e) {
+                                console.warn('No se pudo abrir el voucher:', e);
+                              }
+                            }}
+                            className="text-gray-700 hover:text-gray-900 p-1 rounded hover:bg-gray-50"
+                            title="Imprimir voucher"
+                          >
+                            <FaPrint className="h-4 w-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleVerReserva(reserva)}
+                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
+                            title="Ver detalles"
+                          >
+                            <FaEye className="h-4 w-4" />
+                          </button>
+                          {user?.perfil?.rol === 'supervisor' && (
+                            <>
+                              <button 
+                                onClick={() => handleEditarReserva(reserva)}
+                                className="text-yellow-600 hover:text-yellow-800 p-1 rounded hover:bg-yellow-50"
+                                title="Editar reserva"
+                              >
+                                <FaEdit className="h-4 w-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleEliminarReserva(reserva)}
+                                className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                                title="Eliminar reserva"
+                              >
+                                <FaTrash className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
           {/* Cargar más */}
           {Array.isArray(reservas) && (

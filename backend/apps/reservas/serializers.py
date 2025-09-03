@@ -327,6 +327,18 @@ class EstadisticasSerializer(serializers.Serializer):
     checkouts_hoy = serializers.IntegerField()
 
 
+class KpiRangoSerializer(serializers.Serializer):
+    """Serializer para KPIs calculados en un rango de fechas"""
+
+    ingresos_totales = serializers.DecimalField(max_digits=12, decimal_places=2)
+    noches_vendidas = serializers.IntegerField()
+    ocupacion = serializers.FloatField()
+    adr = serializers.DecimalField(max_digits=12, decimal_places=2)
+    revpar = serializers.DecimalField(max_digits=12, decimal_places=2)
+    num_dias = serializers.IntegerField()
+    habitaciones_disponibles_noches = serializers.IntegerField()
+
+
 class ReservaCreateSerializer(serializers.ModelSerializer):
     """Serializer específico para crear reservas"""
 

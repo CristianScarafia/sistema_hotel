@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { reservasService, habitacionesService } from '../services/api';
-import { format, addDays, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear, isBefore, isAfter, isEqual, eachDayOfInterval } from 'date-fns';
+import { reservasService, habitacionesService, estadisticasService } from '../services/api';
+import { format, addDays, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear, isBefore, isAfter, isSameDay, eachDayOfInterval } from 'date-fns';
 import es from 'date-fns/locale/es';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -99,6 +99,9 @@ const Estadisticas = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const pdfRef = useRef(null);
+  const [kpisApiActual, setKpisApiActual] = useState(null);
+  const [kpisApiPrev, setKpisApiPrev] = useState(null);
+  const [, setKpisError] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -160,6 +163,29 @@ const Estadisticas = () => {
 
   const kpisPrev = useMemo(() => computeKPIs(prevRange.prevStart, prevRange.prevEnd), [computeKPIs, prevRange]);
 
+  useEffect(() => {
+    const fmt = (d) => format(d, 'yyyy-MM-dd');
+    const normalize = (d) => d && ({
+      ingresosTotales: parseFloat(d.ingresos_totales ?? 0),
+      nochesVendidas: Number(d.noches_vendidas ?? 0),
+      ocupacion: Number(d.ocupacion ?? 0),
+      adr: parseFloat(d.adr ?? 0),
+      revpar: parseFloat(d.revpar ?? 0),
+      numDays: Number(d.num_dias ?? 0),
+      habitacionesDisponiblesNoches: Number(d.habitaciones_disponibles_noches ?? 0),
+    });
+    setKpisError(null);
+    Promise.all([
+      estadisticasService.getKpis({ start_date: fmt(startDate), end_date: fmt(endDate) }).then(r => r.data).catch(() => null),
+      estadisticasService.getKpis({ start_date: fmt(prevRange.prevStart), end_date: fmt(prevRange.prevEnd) }).then(r => r.data).catch(() => null),
+    ])
+      .then(([curr, prev]) => {
+        setKpisApiActual(normalize(curr));
+        setKpisApiPrev(normalize(prev));
+      })
+      .catch(() => setKpisError('Error obteniendo KPIs'));
+  }, [startDate, endDate, prevRange]);
+
   const pctChange = (curr, prev) => {
     if (prev === 0) return curr > 0 ? 100 : 0;
     return ((curr - prev) / prev) * 100;
@@ -174,7 +200,7 @@ const Estadisticas = () => {
         return start <= day && day < end; // [start, end)
       }).reduce((acc, r) => acc + (r.cantidad_habitaciones || 1), 0);
 
-      const nuevasReservas = reservas.filter(r => isEqual(new Date(r.fecha_ingreso), day)).length;
+      const nuevasReservas = reservas.filter(r => isSameDay(new Date(r.fecha_ingreso), day)).length;
       return { fecha: formatShort(day), ocupadas, nuevasReservas };
     });
   }, [daysInRange, reservas]);
@@ -216,8 +242,8 @@ const Estadisticas = () => {
     const today = new Date();
     const days = buildDateArray(today, addDays(today, 6));
     return days.map(day => {
-      const checkins = reservas.filter(r => isEqual(new Date(r.fecha_ingreso), day)).length;
-      const checkouts = reservas.filter(r => isEqual(new Date(r.fecha_egreso), day)).length;
+      const checkins = reservas.filter(r => isSameDay(new Date(r.fecha_ingreso), day)).length;
+      const checkouts = reservas.filter(r => isSameDay(new Date(r.fecha_egreso), day)).length;
       const ocupadas = reservas.filter(r => new Date(r.fecha_ingreso) <= day && day < new Date(r.fecha_egreso))
         .reduce((acc, r) => acc + (r.cantidad_habitaciones || 1), 0);
       const tasaOcup = totalRooms > 0 ? (ocupadas / totalRooms) * 100 : 0;
@@ -297,39 +323,41 @@ const Estadisticas = () => {
     );
   }
 
+  const kpiCurr = kpisApiActual || kpisActual;
+  const kpiPrev = kpisApiPrev || kpisPrev;
   const kpis = [
     {
       title: 'Ingresos Totales',
-      value: kpisActual.ingresosTotales,
-      prev: kpisPrev.ingresosTotales,
+      value: kpiCurr.ingresosTotales,
+      prev: kpiPrev.ingresosTotales,
       formatter: (v) => `$ ${v.toFixed(2)}`,
       hint: 'Suma de ingresos de alojamiento prorrateados por noches dentro del período.'
     },
     {
       title: 'Noches Vendidas',
-      value: kpisActual.nochesVendidas,
-      prev: kpisPrev.nochesVendidas,
+      value: kpiCurr.nochesVendidas,
+      prev: kpiPrev.nochesVendidas,
       formatter: (v) => `${Math.round(v)}`,
       hint: 'Suma de noches ocupadas dentro del período (considera cantidad de habitaciones por reserva).'
     },
     {
       title: 'Tasa de Ocupación',
-      value: kpisActual.ocupacion * 100,
-      prev: kpisPrev.ocupacion * 100,
+      value: kpiCurr.ocupacion * 100,
+      prev: kpiPrev.ocupacion * 100,
       formatter: (v) => `${v.toFixed(1)}%`,
       hint: 'Noches vendidas / (Habitaciones disponibles × días del período).'
     },
     {
       title: 'ADR',
-      value: kpisActual.adr,
-      prev: kpisPrev.adr,
+      value: kpiCurr.adr,
+      prev: kpiPrev.adr,
       formatter: (v) => `$ ${v.toFixed(2)}`,
       hint: 'Ingreso promedio por habitación ocupada: Ingresos / Noches vendidas.'
     },
     {
       title: 'RevPAR',
-      value: kpisActual.revpar,
-      prev: kpisPrev.revpar,
+      value: kpiCurr.revpar,
+      prev: kpiPrev.revpar,
       formatter: (v) => `$ ${v.toFixed(2)}`,
       hint: 'Ingreso por habitación disponible: Ingresos / (Habitaciones × días).'
     },
@@ -498,15 +526,15 @@ const Estadisticas = () => {
   );
 };
 
-const ComposedTiempoChart = ({ data, totalRooms }) => {
+const ComposedTiempoChart = ({ data, totalRooms, width, height }) => {
   const maxY = Math.max(totalRooms, ...data.map(d => Math.max(d.ocupadas || 0, d.nuevasReservas || 0)));
   return (
-    <ComposedChartContainer data={data} maxY={maxY} />
+    <ComposedChartContainer data={data} maxY={maxY} width={width} height={height} />
   );
 };
 
-const ComposedChartContainer = ({ data, maxY }) => (
-  <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+const ComposedChartContainer = ({ data, maxY, width, height }) => (
+  <LineChart width={width} height={height} data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
     <CartesianGrid strokeDasharray="3 3" />
     <XAxis dataKey="fecha" />
     <YAxis domain={[0, Math.max(5, maxY)]} allowDecimals={false} />

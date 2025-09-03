@@ -89,6 +89,10 @@ export const habitacionesService = {
   create: (data) => api.post('/habitaciones/', data),
   update: (id, data) => api.put(`/habitaciones/${id}/`, data),
   delete: (id) => api.delete(`/habitaciones/${id}/`),
+  getDisponibles: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return api.get(`/habitaciones/disponibles/${query ? `?${query}` : ''}`);
+  },
 };
 
 // Servicios de planning
@@ -109,6 +113,10 @@ export const usuariosService = {
 export const estadisticasService = {
   getEstadisticas: () => api.get('/estadisticas/'),
   getDashboard: () => api.get('/dashboard/'),
+  getKpis: (params = {}) => {
+    const search = new URLSearchParams(params).toString();
+    return api.get(`/estadisticas/kpis/${search ? `?${search}` : ''}`);
+  },
 };
 
 // Servicios de Autenticación

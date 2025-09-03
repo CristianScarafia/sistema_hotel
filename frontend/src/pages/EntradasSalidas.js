@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { reservasService } from '../services/api';
 import { FaSignInAlt, FaSignOutAlt, FaCalendarAlt, FaUser, FaBed, FaPhone, FaMoneyBillWave } from 'react-icons/fa';
+import { toTitleCase } from '../utils/hotelUtils';
 
 const EntradasSalidas = () => {
   // Función auxiliar para crear fechas de manera segura
@@ -35,26 +36,18 @@ const EntradasSalidas = () => {
   const loadEntradasSalidas = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Cargar todas las reservas de hoy y filtrar por fecha
-      const response = await reservasService.getHoy();
-      const reservasHoy = response.data;
-      
-      // Filtrar entradas (check-ins) para la fecha seleccionada
-      const entradasFiltradas = reservasHoy.filter(reserva => 
-        reserva.fecha_ingreso === selectedDate
-      );
+      // Obtener reservas del día seleccionado usando endpoint por fecha
+      const data = await reservasService.getReservasPorFecha(selectedDate);
+      const entradasFiltradas = Array.isArray(data?.entradas) ? data.entradas : [];
+      const salidasFiltradas = Array.isArray(data?.salidas) ? data.salidas : [];
+
       setEntradas(entradasFiltradas);
-
-      // Filtrar salidas (check-outs) para la fecha seleccionada
-      const salidasFiltradas = reservasHoy.filter(reserva => 
-        reserva.fecha_egreso === selectedDate
-      );
       setSalidas(salidasFiltradas);
-
     } catch (error) {
       console.error('Error al cargar entradas y salidas:', error);
       toast.error('Error al cargar los datos');
+      setEntradas([]);
+      setSalidas([]);
     } finally {
       setLoading(false);
     }
@@ -167,8 +160,9 @@ const EntradasSalidas = () => {
                         <FaUser className="h-4 w-4 text-gray-400" />
                         <div>
                           <h3 className="text-sm font-medium text-gray-900">
-                            {reserva.nombre_completo || `${reserva.nombre} ${reserva.apellido}`}
+                            {toTitleCase(reserva.nombre_completo || `${reserva.nombre} ${reserva.apellido}`)}
                           </h3>
+                          <div className="text-xs text-gray-500">Número de reserva: {reserva.id}</div>
                           <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
                             <span className="flex items-center space-x-1">
                               <FaBed className="h-3 w-3" />
@@ -239,8 +233,9 @@ const EntradasSalidas = () => {
                         <FaUser className="h-4 w-4 text-gray-400" />
                         <div>
                           <h3 className="text-sm font-medium text-gray-900">
-                            {reserva.nombre_completo || `${reserva.nombre} ${reserva.apellido}`}
+                            {toTitleCase(reserva.nombre_completo || `${reserva.nombre} ${reserva.apellido}`)}
                           </h3>
+                          <div className="text-xs text-gray-500">Número de reserva: {reserva.id}</div>
                           <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
                             <span className="flex items-center space-x-1">
                               <FaBed className="h-3 w-3" />

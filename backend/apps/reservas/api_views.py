@@ -20,6 +20,7 @@ from .serializers import (
     ReservaListSerializer,
     HabitacionListSerializer,
     EstadisticasSerializer,
+    KpiRangoSerializer,
     ReservaCreateSerializer,
     UsuarioListSerializer,
 )
@@ -261,9 +262,70 @@ class HabitacionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def disponibles(self, request):
-        """Obtener habitaciones disponibles"""
-        # Por ahora retornamos todas las habitaciones ya que no hay campo estado
+        """Obtener habitaciones disponibles opcionalmente filtradas por rango y capacidad.
+
+        Query params soportados:
+        - fecha_ingreso: YYYY-MM-DD
+        - fecha_egreso: YYYY-MM-DD
+        - personas: int (usado para mapear a tipo de habitación)
+        """
+        fecha_ingreso_str = request.query_params.get("fecha_ingreso")
+        fecha_egreso_str = request.query_params.get("fecha_egreso")
+        personas_str = request.query_params.get("personas")
+
+        # Base queryset
         habitaciones = Habitacion.objects.all()
+
+        # Filtrar por capacidad via tipo según cantidad de personas
+        if personas_str:
+            try:
+                personas = int(personas_str)
+            except ValueError:
+                return Response(
+                    {"error": "El parámetro personas debe ser numérico"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Mapeo simple personas -> tipo exacto
+            if personas <= 2:
+                tipos_filtrados = ["doble"]
+            elif personas == 3:
+                tipos_filtrados = ["triple"]
+            elif personas == 4:
+                tipos_filtrados = ["cuadruple"]
+            else:
+                tipos_filtrados = ["quintuple"]
+
+            habitaciones = habitaciones.filter(tipo__in=tipos_filtrados)
+
+        # Filtrar por disponibilidad en rango
+        if fecha_ingreso_str and fecha_egreso_str:
+            try:
+                fecha_ingreso = datetime.strptime(fecha_ingreso_str, "%Y-%m-%d").date()
+                fecha_egreso = datetime.strptime(fecha_egreso_str, "%Y-%m-%d").date()
+            except ValueError:
+                return Response(
+                    {"error": "Formato de fecha inválido (YYYY-MM-DD)"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if fecha_ingreso >= fecha_egreso:
+                return Response(
+                    {"error": "fecha_ingreso debe ser anterior a fecha_egreso"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Excluir habitaciones con solapamiento en el rango
+            habitaciones_ocupadas_ids = (
+                Reserva.objects.filter(
+                    fecha_ingreso__lt=fecha_egreso,
+                    fecha_egreso__gt=fecha_ingreso,
+                )
+                .values_list("nhabitacion_id", flat=True)
+                .distinct()
+            )
+            habitaciones = habitaciones.exclude(id__in=habitaciones_ocupadas_ids)
+
         serializer = self.get_serializer(habitaciones, many=True)
         return Response(serializer.data)
 
@@ -789,6 +851,7 @@ class ReservaViewSet(viewsets.ModelViewSet):
             print("Usuario no autenticado, pero continuando para pruebas...")
 
         fecha_str = request.query_params.get("fecha")
+        print(fecha_str)
         if not fecha_str:
             return Response(
                 {"error": "Parámetro fecha requerido"},
@@ -797,15 +860,27 @@ class ReservaViewSet(viewsets.ModelViewSet):
 
         try:
             fecha = date.fromisoformat(fecha_str)
-            reservas = Reserva.objects.filter(
-                Q(fecha_ingreso__lte=fecha) & Q(fecha_egreso__gt=fecha)
-            ).select_related(
-                "nhabitacion"
-            )  # Optimizar consulta
 
-            # Calcular total de personas para el día actual
+            # Activas: huéspedes presentes esa noche (mantener __gt para no contar check-outs en medialunas)
+            reservas_activas = Reserva.objects.filter(
+                Q(fecha_ingreso__lte=fecha) & Q(fecha_egreso__gt=fecha)
+            ).select_related("nhabitacion")
+
+            # Entradas y salidas del día (para UI de entradas/salidas)
+            entradas = (
+                Reserva.objects.filter(fecha_ingreso=fecha)
+                .select_related("nhabitacion")
+                .order_by("id")
+            )
+            salidas = (
+                Reserva.objects.filter(fecha_egreso=fecha)
+                .select_related("nhabitacion")
+                .order_by("id")
+            )
+
+            # Calcular total de personas presentes (para medialunas)
             total_personas_actual = (
-                reservas.aggregate(total=Sum("personas"))["total"] or 0
+                reservas_activas.aggregate(total=Sum("personas"))["total"] or 0
             )
 
             # Cálculo de medialunas para el día siguiente basado en las personas del día actual
@@ -813,10 +888,16 @@ class ReservaViewSet(viewsets.ModelViewSet):
             docenas_medialunas = round(medialunas_necesarias, 1)
             fecha_siguiente = fecha + timedelta(days=1)
 
-            serializer = ReservaListSerializer(reservas, many=True)
+            reservas_serializer = ReservaListSerializer(reservas_activas, many=True)
+            entradas_serializer = ReservaListSerializer(entradas, many=True)
+            salidas_serializer = ReservaListSerializer(salidas, many=True)
+
             return Response(
                 {
-                    "reservas": serializer.data,
+                    # Backward compatibility: "reservas" son las activas
+                    "reservas": reservas_serializer.data,
+                    "entradas": entradas_serializer.data,
+                    "salidas": salidas_serializer.data,
                     "medialunas": {
                         "fecha_siguiente": fecha_siguiente.isoformat(),
                         "total_personas": total_personas_actual,
@@ -981,12 +1062,119 @@ class EstadisticasView(APIView):
             "total_habitaciones": total_habitaciones,
             "habitaciones_ocupadas": habitaciones_ocupadas,
             "habitaciones_disponibles": habitaciones_disponibles,
-            "ingresos_totales": ingresos_totales,
+            # Restringir ingresos para no supervisores
+            "ingresos_totales": ingresos_totales if is_supervisor(request.user) else 0,
             "reservas_hoy": reservas_hoy,
             "checkouts_hoy": checkouts_hoy,
         }
 
         serializer = EstadisticasSerializer(data)
+        return Response(serializer.data)
+
+
+class EstadisticasKpiView(APIView):
+    """KPIs por rango de fechas: ingresos_totales, noches_vendidas, ocupacion, adr, revpar"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Query params: start_date, end_date (YYYY-MM-DD)
+        start_str = request.query_params.get("start_date")
+        end_str = request.query_params.get("end_date")
+
+        try:
+            if not start_str or not end_str:
+                # Por defecto: mes actual
+                today = date.today()
+                start_date = today.replace(day=1)
+                # fin de mes: avanzar 1 mes y restar 1 día
+                if start_date.month == 12:
+                    next_month_first = start_date.replace(
+                        year=start_date.year + 1, month=1
+                    )
+                else:
+                    next_month_first = start_date.replace(month=start_date.month + 1)
+                end_date = next_month_first - timedelta(days=1)
+            else:
+                start_date = datetime.strptime(start_str, "%Y-%m-%d").date()
+                end_date = datetime.strptime(end_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response(
+                {"error": "Formato de fecha inválido (YYYY-MM-DD)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if start_date > end_date:
+            return Response(
+                {"error": "start_date debe ser anterior o igual a end_date"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Obtener habitaciones totales
+        total_habitaciones = Habitacion.objects.count()
+
+        # Obtener reservas que solapan el rango [start_date, end_date] por noches
+        reservas = Reserva.objects.filter(
+            fecha_ingreso__lt=end_date + timedelta(days=1),
+            fecha_egreso__gt=start_date,
+        ).only(
+            "fecha_ingreso",
+            "fecha_egreso",
+            "precio_por_noche",
+            "monto_total",
+            "noches",
+            "cantidad_habitaciones",
+        )
+
+        # Calcular KPIs prorrateados por noches dentro del rango
+        num_dias = (end_date - start_date).days + 1
+        noches_vendidas = 0
+        ingresos_totales = 0.0
+
+        for r in reservas:
+            # intersección de noches [start, end)
+            effective_start = max(r.fecha_ingreso, start_date)
+            effective_end = min(r.fecha_egreso, end_date + timedelta(days=1))
+            nights = max(0, (effective_end - effective_start).days)
+            if nights <= 0:
+                continue
+            cantidad = getattr(r, "cantidad_habitaciones", 1) or 1
+            noches_vendidas += nights * cantidad
+            ppx = getattr(r, "precio_por_noche", None)
+            if ppx is None or ppx == 0:
+                ppx = (
+                    (float(r.monto_total) / r.noches)
+                    if getattr(r, "noches", 0)
+                    else 0.0
+                )
+            ingresos_totales += float(ppx) * nights * cantidad
+
+        habitaciones_disponibles_noches = total_habitaciones * num_dias
+        ocupacion = (
+            (noches_vendidas / habitaciones_disponibles_noches)
+            if habitaciones_disponibles_noches
+            else 0.0
+        )
+        adr = (ingresos_totales / noches_vendidas) if noches_vendidas else 0.0
+        revpar = (
+            (ingresos_totales / habitaciones_disponibles_noches)
+            if habitaciones_disponibles_noches
+            else 0.0
+        )
+
+        data = {
+            "ingresos_totales": (
+                round(ingresos_totales, 2) if is_supervisor(request.user) else 0.0
+            ),
+            "noches_vendidas": int(noches_vendidas),
+            "ocupacion": float(ocupacion),
+            "adr": round(adr, 2),
+            "revpar": round(revpar, 2),
+            "num_dias": int(num_dias),
+            "habitaciones_disponibles_noches": int(habitaciones_disponibles_noches),
+        }
+
+        serializer = KpiRangoSerializer(data)
         return Response(serializer.data)
 
 
