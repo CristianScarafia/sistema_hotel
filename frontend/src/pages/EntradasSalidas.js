@@ -101,8 +101,8 @@ const EntradasSalidas = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div className="text-left">
           <h1 className="text-3xl font-bold text-gray-900">Entradas y Salidas</h1>
           <p className="text-gray-600 mt-1">
             Gestiona los check-ins y check-outs del hotel
@@ -110,7 +110,7 @@ const EntradasSalidas = () => {
         </div>
         <button
           onClick={handleRefresh}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 w-full sm:w-auto"
         >
           <FaCalendarAlt className="h-4 w-4" />
           <span>Actualizar</span>
@@ -118,19 +118,21 @@ const EntradasSalidas = () => {
       </div>
 
       {/* Selector de fecha */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center space-x-4">
-          <label className="flex items-center space-x-2 text-gray-700 font-medium">
-            <FaCalendarAlt className="h-5 w-5 text-blue-600" />
-            <span>Seleccionar fecha:</span>
-          </label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={handleDateChange}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <div className="text-lg font-semibold text-gray-800">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="grid grid-cols-1 gap-3 sm:flex sm:items-center sm:gap-4 text-left">
+          <div className="flex items-center gap-2">
+            <label className="flex items-center space-x-2 text-gray-700 font-medium">
+              <FaCalendarAlt className="h-5 w-5 text-blue-600" />
+              <span>Seleccionar fecha:</span>
+            </label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={handleDateChange}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
+            />
+          </div>
+          <div className="text-base sm:text-lg font-semibold text-gray-800">
             {formatDate(selectedDate)}
           </div>
         </div>

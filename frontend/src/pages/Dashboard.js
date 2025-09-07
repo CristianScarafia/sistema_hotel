@@ -43,9 +43,9 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <div className="text-sm text-gray-500">
+      <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-1">
+        <h1 className="text-3xl font-bold text-gray-900 text-left">Dashboard</h1>
+        <div className="text-xs sm:text-sm text-gray-500">
           Última actualización: {new Date().toLocaleString()}
         </div>
       </div>

@@ -120,8 +120,8 @@ const Planning = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div className="text-left">
           <h1 className="text-3xl font-bold text-gray-900">Planning de Reservas</h1>
           <p className="text-gray-600 mt-1">
             Vista general de ocupación de habitaciones
@@ -129,7 +129,7 @@ const Planning = () => {
         </div>
         <button
           onClick={handleRefresh}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 w-full sm:w-auto"
         >
           <FaCalendarAlt className="h-4 w-4" />
           <span>Actualizar</span>
@@ -137,19 +137,21 @@ const Planning = () => {
       </div>
 
       {/* Selector de fecha */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center space-x-4">
-          <label className="flex items-center space-x-2 text-gray-700 font-medium">
-            <FaCalendarAlt className="h-5 w-5 text-blue-600" />
-            <span>Fecha de inicio:</span>
-          </label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={handleDateChange}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <div className="text-lg font-semibold text-gray-800">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="grid grid-cols-1 gap-3 sm:flex sm:items-center sm:gap-4 text-left">
+          <div className="flex items-center gap-2">
+            <label className="flex items-center space-x-2 text-gray-700 font-medium">
+              <FaCalendarAlt className="h-5 w-5 text-blue-600" />
+              <span>Fecha de inicio:</span>
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={handleDateChange}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
+            />
+          </div>
+          <div className="text-base sm:text-lg font-semibold text-gray-800">
             {formatFullDate(startDate)}
           </div>
         </div>
@@ -161,14 +163,14 @@ const Planning = () => {
           <table className="min-w-full table-fixed">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 w-[100px] leading-tight">
+                <th className="px-2 sm:px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 w-[84px] sm:w-[100px] leading-tight">
                   Habitación
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[100px] bg-gray-50 z-10 w-[100px] leading-tight">
+                <th className="px-2 sm:px-3 py-2 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[84px] sm:left-[100px] bg-gray-50 z-10 w-[84px] sm:w-[100px] leading-tight">
                   Tipo
                 </th>
                 {planningData.days.map((day, index) => (
-                  <th key={index} className="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[60px] w-16 leading-tight">
+                  <th key={index} className="px-1 py-2 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[48px] sm:min-w-[60px] w-12 sm:w-16 leading-tight">
                     {formatDate(day)}
                   </th>
                 ))}
@@ -177,21 +179,21 @@ const Planning = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {planningData.planning.map((item, rowIndex) => (
                 <tr key={item.habitacion.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-1 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10 w-[100px] leading-tight">
+                  <td className="px-2 sm:px-3 py-1 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 sticky left-0 bg-white z-10 w-[84px] sm:w-[100px] leading-tight">
                     <div className="flex items-center space-x-2">
-                      <FaBed className="h-4 w-4 text-gray-400" />
+                      <FaBed className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                       <span>{item.habitacion.numero}</span>
                     </div>
                   </td>
-                  <td className="px-3 py-1 whitespace-nowrap sticky left-[100px] bg-white z-10 w-[100px] leading-tight">
-                    <span className={`inline-flex px-1 py-0.5 text-[10px] font-semibold rounded-full ${getTipoColor(item.habitacion.tipo)}`}>
+                  <td className="px-2 sm:px-3 py-1 whitespace-nowrap sticky left-[84px] sm:left-[100px] bg-white z-10 w-[84px] sm:w-[100px] leading-tight">
+                    <span className={`inline-flex px-1 py-0.5 text-[9px] sm:text-[10px] font-semibold rounded-full ${getTipoColor(item.habitacion.tipo)}`}>
                       {item.habitacion.tipo}
                     </span>
                   </td>
                   {item.ocupaciones.map((ocupacion, colIndex) => (
                     <td 
                       key={colIndex} 
-                      className={`px-1 py-1 text-center text-[11px] border-r border-gray-200 w-16 overflow-hidden leading-tight ${getOcupacionClass(ocupacion, item.habitacion.tipo)}`}
+                      className={`px-1 py-1 text-center text-[9px] sm:text-[11px] border-r border-gray-200 w-12 sm:w-16 overflow-hidden leading-tight ${getOcupacionClass(ocupacion, item.habitacion.tipo)}`}
                       title={ocupacion.nombre ? `${ocupacion.nombre} - ${ocupacion.fecha_ingreso} a ${ocupacion.fecha_egreso}` : 'Disponible'}
                     >
                       {ocupacion.nombre && (

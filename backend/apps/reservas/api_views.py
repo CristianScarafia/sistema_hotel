@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.authentication import SessionAuthentication
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q, Sum, Count
+from django.db import transaction
 from django.utils import timezone
 from datetime import date, timedelta, datetime
 from django.utils.decorators import method_decorator
@@ -396,7 +397,143 @@ class ReservaViewSet(viewsets.ModelViewSet):
         return is_supervisor(user)
 
     def create(self, request, *args, **kwargs):
-        """Crear reserva devolviendo el objeto completo con id"""
+        """Crear reserva(s) devolviendo el/los objeto(s) completo(s) con id.
+
+        Soporta tres modos:
+        - Simple: `habitacion_id` (crea 1 reserva)
+        - Múltiple simple: `habitacion_ids` (lista de IDs; crea N reservas, una por habitación)
+        - Múltiple detallado: `habitaciones` (lista de objetos {habitacion_id, personas})
+        """
+
+        # Caso múltiple detallado: lista de objetos {habitacion_id, personas}
+        habitaciones_payload = request.data.get("habitaciones")
+        if isinstance(habitaciones_payload, list) and len(habitaciones_payload) > 0:
+            created_reservas = []
+            errors = []
+            # Normalizar y validar estructura
+            normalized_items = []
+            for idx, item in enumerate(habitaciones_payload):
+                try:
+                    hid = int(item.get("habitacion_id"))
+                    per = int(item.get("personas", 1) or 1)
+                    if per <= 0:
+                        raise ValueError("personas debe ser > 0")
+                    normalized_items.append({"habitacion_id": hid, "personas": per})
+                except Exception as e:
+                    errors.append({"index": idx, "error": f"Elemento inválido: {e}"})
+
+            # Evitar duplicados de habitación
+            seen = set()
+            dedup_items = []
+            for it in normalized_items:
+                if it["habitacion_id"] not in seen:
+                    seen.add(it["habitacion_id"])
+                    dedup_items.append(it)
+
+            if len(dedup_items) == 0:
+                return Response(
+                    {"error": "habitaciones no puede estar vacío"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            with transaction.atomic():
+                for it in dedup_items:
+                    payload = request.data.copy()
+                    payload["habitacion_id"] = it["habitacion_id"]
+                    payload["personas"] = it["personas"]
+                    payload["cantidad_habitaciones"] = 1
+                    if "habitaciones" in payload:
+                        try:
+                            del payload["habitaciones"]
+                        except Exception:
+                            pass
+
+                    serializer = ReservaCreateSerializer(data=payload)
+                    try:
+                        serializer.is_valid(raise_exception=True)
+                        reserva = serializer.save()
+                        created_reservas.append(reserva)
+                    except Exception as e:
+                        errors.append(
+                            {
+                                "habitacion_id": it["habitacion_id"],
+                                "error": str(e),
+                            }
+                        )
+
+                if errors and not created_reservas:
+                    transaction.set_rollback(True)
+                    return Response(
+                        {"errores": errors}, status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            output_serializer = ReservaSerializer(created_reservas, many=True)
+            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+        # Caso múltiple: lista de habitaciones
+        habitacion_ids = request.data.get("habitacion_ids")
+        if habitacion_ids:
+            # Aceptar lista o string separada por comas
+            if isinstance(habitacion_ids, str):
+                habitacion_ids = [x for x in habitacion_ids.split(",") if x.strip()]
+            if not isinstance(habitacion_ids, (list, tuple)):
+                return Response(
+                    {"error": "habitacion_ids debe ser una lista de IDs"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                habitacion_ids = [int(x) for x in habitacion_ids]
+            except (TypeError, ValueError):
+                return Response(
+                    {"error": "habitacion_ids contiene valores no numéricos"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if len(habitacion_ids) == 0:
+                return Response(
+                    {"error": "habitacion_ids no puede estar vacío"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Evitar duplicados explícitos en entrada
+            habitacion_ids = list(dict.fromkeys(habitacion_ids))
+
+            created_reservas = []
+            errors = []
+            with transaction.atomic():
+                for hid in habitacion_ids:
+                    # Construir payload individual por habitación
+                    payload = request.data.copy()
+                    payload["habitacion_id"] = hid
+                    # Forzar cantidad_habitaciones=1 por registro para no sobredimensionar KPIs
+                    payload["cantidad_habitaciones"] = 1
+                    # Remover lista para el serializer individual
+                    if "habitacion_ids" in payload:
+                        try:
+                            del payload["habitacion_ids"]
+                        except Exception:
+                            pass
+
+                    serializer = ReservaCreateSerializer(data=payload)
+                    try:
+                        serializer.is_valid(raise_exception=True)
+                        reserva = serializer.save()
+                        created_reservas.append(reserva)
+                    except Exception as e:
+                        errors.append({"habitacion_id": hid, "error": str(e)})
+
+                if errors and not created_reservas:
+                    # Si todas fallaron, abortar transacción completa
+                    transaction.set_rollback(True)
+                    return Response(
+                        {"errores": errors}, status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            output_serializer = ReservaSerializer(created_reservas, many=True)
+            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+        # Caso simple: una sola habitación
         create_serializer = ReservaCreateSerializer(data=request.data)
         create_serializer.is_valid(raise_exception=True)
         reserva = create_serializer.save()

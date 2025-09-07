@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { reservasService, usuariosService, habitacionesService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -7,24 +7,25 @@ import { toTitleCase } from '../utils/hotelUtils';
 
 const Reservas = () => {
   const { user } = useAuth();
+  const formContainerRef = useRef(null);
   const [reservas, setReservas] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
   const [habitaciones, setHabitaciones] = useState([]);
-  const [habitacionesFiltradas, setHabitacionesFiltradas] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [editandoId, setEditandoId] = useState(null); // Para controlar si estamos editando
+  const [habitacionesDisponiblesRango, setHabitacionesDisponiblesRango] = useState([]);
+  const [multiPersonas, setMultiPersonas] = useState([1]);
+  const [multiHabitacionIds, setMultiHabitacionIds] = useState(['']);
   const [formData, setFormData] = useState({
     encargado: '',
-    nhabitacion: '',
     origen: '',
     nombre: '',
     apellido: '',
     telefono: '',
     fecha_ingreso: '',
     fecha_egreso: '',
-    personas: 1,
     cantidad_habitaciones: 1,
     monto_total: '',
     senia: '',
@@ -39,35 +40,42 @@ const Reservas = () => {
     loadUsuarios();
   }, []);
 
-  // Refrescar habitaciones filtradas cuando cambian fechas o personas
+  // Refrescar habitaciones disponibles por rango cuando cambian fechas
   useEffect(() => {
-    const { fecha_ingreso, fecha_egreso, personas } = formData;
-    if (fecha_ingreso && fecha_egreso && personas) {
+    const { fecha_ingreso, fecha_egreso } = formData;
+    if (fecha_ingreso && fecha_egreso) {
       habitacionesService
         .getDisponibles({
           fecha_ingreso,
           fecha_egreso,
-          personas,
         })
         .then((resp) => {
           const data = resp.data?.results || resp.data || [];
-          setHabitacionesFiltradas(Array.isArray(data) ? data : []);
-          // Si la habitación seleccionada ya no está, limpiarla
-          if (
-            formData.nhabitacion &&
-            !data.some((h) => String(h.id) === String(formData.nhabitacion))
-          ) {
-            setFormData((prev) => ({ ...prev, nhabitacion: '' }));
-          }
+          let lista = Array.isArray(data) ? data : [];
+          setHabitacionesDisponiblesRango(lista);
         })
         .catch(() => {
-          setHabitacionesFiltradas([]);
+          setHabitacionesDisponiblesRango([]);
         });
     } else {
-      // Si no hay criterios suficientes, mostrar lista completa
-      setHabitacionesFiltradas(habitaciones);
+      setHabitacionesDisponiblesRango(habitaciones);
     }
-  }, [formData, habitaciones]);
+  }, [formData, habitaciones, editandoId]);
+
+  // Mantener arrays dinámicos en sync con cantidad_habitaciones
+  useEffect(() => {
+    const n = parseInt(formData.cantidad_habitaciones || 1);
+    setMultiPersonas((prev) => {
+      const arr = prev.slice(0, n);
+      while (arr.length < n) arr.push(1);
+      return arr;
+    });
+    setMultiHabitacionIds((prev) => {
+      const arr = prev.slice(0, n);
+      while (arr.length < n) arr.push('');
+      return arr;
+    });
+  }, [formData.cantidad_habitaciones]);
 
   // Importación movida a Configuración
 
@@ -93,20 +101,16 @@ const Reservas = () => {
       // Verificar si la respuesta es un array o tiene la estructura esperada
       if (Array.isArray(data)) {
         setHabitaciones(data);
-        setHabitacionesFiltradas(data);
       } else if (data.results && Array.isArray(data.results)) {
         setHabitaciones(data.results);
-        setHabitacionesFiltradas(data.results);
       } else {
         // Si la estructura es inesperada, establecer array vacío
         console.warn('Estructura de respuesta inesperada para habitaciones:', data);
         setHabitaciones([]);
-        setHabitacionesFiltradas([]);
       }
     } catch (error) {
       console.error('Error al cargar habitaciones:', error);
       setHabitaciones([]);
-      setHabitacionesFiltradas([]);
     }
   };
 
@@ -146,12 +150,14 @@ const Reservas = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validar que todos los campos estén completos
-    const camposObligatorios = [
-      'encargado', 'nhabitacion', 'origen', 'nombre', 'apellido', 
-      'telefono', 'fecha_ingreso', 'fecha_egreso', 'personas', 
-      'cantidad_habitaciones', 'monto_total', 'senia'
+    // Validaciones base
+    const camposObligatoriosBase = [
+      'encargado', 'origen', 'nombre', 'apellido',
+      'telefono', 'fecha_ingreso', 'fecha_egreso',
+      'monto_total', 'senia'
     ];
+    const n = parseInt(formData.cantidad_habitaciones || 1);
+    const camposObligatorios = [...camposObligatoriosBase, 'cantidad_habitaciones'];
     
     const camposVacios = camposObligatorios.filter(campo => !formData[campo]);
     
@@ -160,27 +166,49 @@ const Reservas = () => {
       return;
     }
 
+    // Validar cada grupo (incluye 1 habitación)
+    for (let i = 0; i < n; i++) {
+      const p = parseInt(multiPersonas[i] || 0);
+      const hid = multiHabitacionIds[i];
+      if (!p || p <= 0) {
+        toast.error(`Ingrese personas para la habitación #${i + 1}`);
+        return;
+      }
+      if (!hid) {
+        toast.error(`Seleccione la habitación #${i + 1}`);
+        return;
+      }
+    }
+
     try {
       // Preparar los datos en el formato correcto para la API
       const datosParaEnviar = {
         ...formData,
-        habitacion_id: formData.nhabitacion, // Cambiar nhabitacion por habitacion_id
         encargado: parseInt(formData.encargado), // Asegurar que sea un entero
-        personas: parseInt(formData.personas),
-        cantidad_habitaciones: parseInt(formData.cantidad_habitaciones),
+        cantidad_habitaciones: n,
         monto_total: parseFloat(formData.monto_total),
         senia: parseFloat(formData.senia),
         celiacos: Boolean(formData.celiacos)
       };
 
-      // Eliminar el campo nhabitacion ya que usamos habitacion_id
-      delete datosParaEnviar.nhabitacion;
+      // Construir arreglo de habitaciones siempre (incluye caso 1)
+      datosParaEnviar.habitaciones = multiHabitacionIds.map((id, idx) => ({
+        habitacion_id: parseInt(id),
+        personas: parseInt(multiPersonas[idx] || 1),
+      }));
 
       console.log('Datos a enviar:', datosParaEnviar); // Para debugging
 
       if (editandoId) {
         // Actualizar reserva existente
-        await reservasService.update(editandoId, datosParaEnviar);
+        // Para edición de una reserva individual, tomamos el primer item
+        const simple = {
+          ...datosParaEnviar,
+          habitacion_id: datosParaEnviar.habitaciones?.[0]?.habitacion_id,
+          personas: datosParaEnviar.habitaciones?.[0]?.personas,
+        };
+        delete simple.habitaciones;
+        await reservasService.update(editandoId, simple);
         toast.success('Reserva actualizada exitosamente');
       } else {
         // Crear nueva reserva
@@ -197,35 +225,51 @@ const Reservas = () => {
           }
         } catch {}
         const resp = await reservasService.create(datosParaEnviar);
-        toast.success('Reserva creada exitosamente');
-        try {
-          const nuevaId = resp?.data?.id;
-          if (nuevaId) {
-            const voucherUrl = reservasService.getVoucherUrl(nuevaId);
-            window.open(voucherUrl, '_blank', 'noopener');
+        const data = resp?.data;
+        if (Array.isArray(data)) {
+          toast.success(`Se crearon ${data.length} reservas exitosamente`);
+          try {
+            data.slice(0, 5).forEach((res) => {
+              const idAbrir = res?.id;
+              if (idAbrir) {
+                const voucherUrl = reservasService.getVoucherUrl(idAbrir);
+                window.open(voucherUrl, '_blank', 'noopener');
+              }
+            });
+          } catch (e) {
+            console.warn('No se pudo abrir el voucher automáticamente:', e);
           }
-        } catch (e) {
-          console.warn('No se pudo abrir el voucher automáticamente:', e);
+        } else {
+          toast.success('Reserva creada exitosamente');
+          try {
+            const nuevaId = data?.id;
+            if (nuevaId) {
+              const voucherUrl = reservasService.getVoucherUrl(nuevaId);
+              window.open(voucherUrl, '_blank', 'noopener');
+            }
+          } catch (e) {
+            console.warn('No se pudo abrir el voucher automáticamente:', e);
+          }
         }
       }
 
       // Limpiar formulario y estado de edición
       setFormData({
         encargado: '',
-        nhabitacion: '',
         origen: '',
         nombre: '',
         apellido: '',
         telefono: '',
         fecha_ingreso: '',
         fecha_egreso: '',
-        personas: 1,
         cantidad_habitaciones: 1,
         monto_total: '',
         senia: '',
         celiacos: false,
         observaciones: ''
       });
+      setMultiPersonas([1]);
+      setMultiHabitacionIds(['']);
       setEditandoId(null);
       loadReservas();
     } catch (error) {
@@ -281,29 +325,88 @@ const Reservas = () => {
     console.log('Ver reserva:', reserva);
   };
 
+  const formatDateForInput = (value) => {
+    if (!value) return '';
+    if (typeof value === 'string') {
+      if (value.includes('T')) return value.split('T')[0];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    }
+    try {
+      const d = new Date(value);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
+  const splitNombreApellido = (nombreCompleto) => {
+    if (!nombreCompleto || typeof nombreCompleto !== 'string') {
+      return { nombre: '', apellido: '' };
+    }
+    const partes = nombreCompleto.trim().split(/\s+/);
+    if (partes.length === 1) {
+      return { nombre: partes[0], apellido: '' };
+    }
+    const apellido = partes.pop();
+    const nombre = partes.join(' ');
+    return { nombre, apellido };
+  };
+
   const handleEditarReserva = (reserva) => {
     toast.info(`Editando reserva de ${reserva.nombre_completo || `${reserva.nombre} ${reserva.apellido}`}`);
     
+    // Derivar datos que pueden venir en diferentes formas desde el backend
+    const { nombre: nombreDerivado, apellido: apellidoDerivado } =
+      splitNombreApellido(reserva.nombre_completo);
+
+    const encargadoId =
+      (reserva.encargado && reserva.encargado.id) ??
+      reserva.encargado_id ??
+      (() => {
+        const username = reserva.encargado?.username ?? reserva.encargado_username ?? reserva.encargado;
+        const match = Array.isArray(usuarios)
+          ? usuarios.find((u) => u.username === username)
+          : undefined;
+        return match?.id ?? '';
+      })();
+
+    const habitacionId =
+      reserva.habitacion_id ??
+      reserva.habitacion?.id ??
+      (() => {
+        const numero = reserva.habitacion_numero ?? reserva.habitacion?.numero;
+        const match = Array.isArray(habitaciones)
+          ? habitaciones.find((h) => String(h.numero) === String(numero))
+          : undefined;
+        return match?.id ?? '';
+      })();
+
     // Cargar los datos de la reserva en el formulario
     setFormData({
-      encargado: reserva.encargado || '',
-      nhabitacion: reserva.habitacion_id || reserva.habitacion?.id || '',
-      origen: reserva.origen || '',
-      nombre: reserva.nombre || '',
-      apellido: reserva.apellido || '',
-      telefono: reserva.telefono || '',
-      fecha_ingreso: reserva.fecha_ingreso || '',
-      fecha_egreso: reserva.fecha_egreso || '',
-      personas: reserva.personas || 1,
-      cantidad_habitaciones: reserva.cantidad_habitaciones || 1,
-      monto_total: reserva.monto_total || '',
-      senia: reserva.senia || '',
-      celiacos: reserva.celiacos || false,
-      observaciones: reserva.observaciones || ''
+      encargado: encargadoId ?? '',
+      origen: reserva.origen ?? '',
+      nombre: (reserva.nombre ?? nombreDerivado) ?? '',
+      apellido: (reserva.apellido ?? apellidoDerivado) ?? '',
+      telefono: reserva.telefono ?? '',
+      fecha_ingreso: (formatDateForInput(reserva.fecha_ingreso) ?? ''),
+      fecha_egreso: (formatDateForInput(reserva.fecha_egreso) ?? ''),
+      cantidad_habitaciones: 1,
+      monto_total: reserva.monto_total ?? '',
+      senia: reserva.senia ?? '',
+      celiacos: reserva.celiacos ?? false,
+      observaciones: reserva.observaciones ?? ''
     });
+    setMultiPersonas([reserva.personas ?? 1]);
+    setMultiHabitacionIds([habitacionId ?? '']);
     setEditandoId(reserva.id); // Establecer el ID de la reserva a editar
     
     console.log('Editar reserva:', reserva);
+    try {
+      formContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch {}
   };
 
   const handleEliminarReserva = async (reserva) => {
@@ -331,17 +434,17 @@ const Reservas = () => {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Formulario de Nueva Reserva (columna izquierda) */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+      <div className="space-y-6">
+        {/* Formulario de Nueva Reserva (arriba, ancho completo) */}
+        <div ref={formContainerRef} className={`rounded-lg shadow p-6 ${editandoId ? 'bg-blue-50' : 'bg-white'}`}>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6 text-left">
             {editandoId ? 'Editar Reserva' : 'Nueva Reserva'}
           </h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Grupo 1: Encargado + Fechas */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="md:col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="sm:col-span-2 lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Encargado <span className="text-red-500">*</span>
                 </label>
@@ -352,7 +455,7 @@ const Reservas = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="">Seleccionar encargado</option>
+                  <option value="" disabled>Seleccionar encargado</option>
                   {Array.isArray(usuarios) && usuarios.map(usuario => (
                     <option key={usuario.id} value={usuario.id}>
                       {usuario.username}
@@ -360,7 +463,7 @@ const Reservas = () => {
                   ))}
                 </select>
               </div>
-              <div>
+              <div className="sm:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Fecha de Ingreso <span className="text-red-500">*</span>
                 </label>
@@ -369,11 +472,11 @@ const Reservas = () => {
                   name="fecha_ingreso"
                   value={formData.fecha_ingreso}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   required
                 />
               </div>
-              <div>
+              <div className="sm:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Fecha de Egreso <span className="text-red-500">*</span>
                 </label>
@@ -382,14 +485,14 @@ const Reservas = () => {
                   name="fecha_egreso"
                   value={formData.fecha_egreso}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   required
                 />
               </div>
             </div>
 
             {/* Grupo 2: Datos del huésped */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre <span className="text-red-500">*</span>
@@ -429,76 +532,29 @@ const Reservas = () => {
                   required
                 />
               </div>
-            </div>
-
-            {/* Grupo 3: Personas + Cantidad de Habitaciones */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número de Personas <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="personas"
-                  value={formData.personas}
-                  onChange={handleInputChange}
-                  min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Cantidad de Habitaciones <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="cantidad_habitaciones"
-                  value={formData.cantidad_habitaciones}
-                  onChange={handleInputChange}
-                  min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Habitación <span className="text-red-500">*</span>
+                  Origen <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="nhabitacion"
-                  value={formData.nhabitacion}
+                  name="origen"
+                  value={formData.origen}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
-                  disabled={!formData.fecha_ingreso || !formData.fecha_egreso || !formData.personas}
                 >
-                  <option value="">{!formData.fecha_ingreso || !formData.fecha_egreso || !formData.personas ? 'Seleccione encargado, fechas y personas' : 'Seleccionar habitación'}</option>
-                  {Array.isArray(habitacionesFiltradas) && habitacionesFiltradas.map(habitacion => (
-                    <option key={habitacion.id} value={habitacion.id}>
-                      {habitacion.numero} - {habitacion.tipo}
-                    </option>
-                  ))}
+                  <option value="" disabled>Seleccionar origen</option>
+                  <option value="Celular">Celular</option>
+                  <option value="Booking">Booking</option>
+                  <option value="Sindicato">Sindicato</option>
+                  <option value="Agencia">Agencia</option>
+                  <option value="Calle">Calle</option>
                 </select>
               </div>
             </div>
 
-            {/* Grupo 4: Capacidad */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número de Personas <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="personas"
-                  value={formData.personas}
-                  onChange={handleInputChange}
-                  min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
+            {/* Grupo 3: Cantidad de Habitaciones + Detalle por habitación (tamaño constante) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Cantidad de Habitaciones <span className="text-red-500">*</span>
@@ -507,16 +563,79 @@ const Reservas = () => {
                   type="number"
                   name="cantidad_habitaciones"
                   value={formData.cantidad_habitaciones}
-                  onChange={handleInputChange}
+                  onChange={(e) => {
+                    const maxHab = Math.max(1, parseInt(habitaciones?.length || 1));
+                    const val = Math.min(Math.max(1, parseInt(e.target.value || 1)), maxHab);
+                    setFormData((prev) => ({ ...prev, cantidad_habitaciones: val }));
+                  }}
                   min="1"
+                  max={habitaciones?.length || 1}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Detalle de Habitaciones y Personas <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-3">
+                  {Array.from({ length: parseInt(formData.cantidad_habitaciones || 1) }).map((_, idx) => {
+                    const p = parseInt(multiPersonas[idx] || 1);
+                    const selectedOthers = multiHabitacionIds.filter((val, j) => j !== idx);
+                    const mapa = p <= 2 ? ['doble'] : p === 3 ? ['triple'] : p === 4 ? ['cuadruple'] : ['quintuple'];
+                    const opciones = (habitacionesDisponiblesRango || []).filter((h) => mapa.includes(h.tipo) && !selectedOthers.includes(String(h.id)));
+                    return (
+                      <div key={idx} className="grid grid-cols-5 gap-2">
+                        <div className="col-span-2">
+                          <input
+                            type="number"
+                            min="1"
+                            value={multiPersonas[idx]}
+                            onChange={(e) => {
+                              const val = Math.max(1, parseInt(e.target.value || 1));
+                              setMultiPersonas((prev) => {
+                                const arr = [...prev];
+                                arr[idx] = val;
+                                return arr;
+                              });
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder={`Personas #${idx + 1}`}
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <select
+                            value={multiHabitacionIds[idx]}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setMultiHabitacionIds((prev) => {
+                                const arr = [...prev];
+                                arr[idx] = val;
+                                return arr;
+                              });
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={!formData.fecha_ingreso || !formData.fecha_egreso}
+                          >
+                            <option value="" disabled>{!formData.fecha_ingreso || !formData.fecha_egreso ? 'Seleccione fechas' : 'Seleccionar habitación'}</option>
+                            {opciones.map((habitacion) => (
+                              <option key={habitacion.id} value={habitacion.id}>
+                                {habitacion.numero} - {habitacion.tipo}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
+            {/* Grupo 4 eliminado: duplicado de capacidad */}
+
             {/* Grupo 5: Montos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Monto Total <span className="text-red-500">*</span>
@@ -550,7 +669,7 @@ const Reservas = () => {
             </div>
 
             {/* Grupo 6: Observaciones y celiacos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="flex items-center">
                   <input
@@ -615,7 +734,7 @@ const Reservas = () => {
           </form>
         </div>
 
-        {/* Lista de Reservas */}
+        {/* Lista de Reservas (debajo, ancho completo) */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 space-y-3">
             <h2 className="text-xl font-semibold text-gray-900">Lista de Reservas</h2>
