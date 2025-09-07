@@ -118,23 +118,14 @@ const Reservas = () => {
     try {
       const response = await usuariosService.getAll();
       const data = response.data;
-      
-      // Verificar si la respuesta es un array o tiene la estructura esperada
       if (Array.isArray(data)) {
         setUsuarios(data);
       } else if (data.results && Array.isArray(data.results)) {
         setUsuarios(data.results);
       } else {
-        // Si la estructura es inesperada, establecer array vacío
-        console.warn('Estructura de respuesta inesperada para usuarios:', data);
         setUsuarios([]);
       }
     } catch (error) {
-      console.error('Error al cargar usuarios:', error);
-      // Si el error es 403 (Forbidden), mostrar mensaje específico
-      if (error.response?.status === 403) {
-        console.warn('No tienes permisos para ver usuarios. Solo los supervisores pueden acceder a esta información.');
-      }
       setUsuarios([]);
     }
   };
@@ -184,7 +175,7 @@ const Reservas = () => {
       // Preparar los datos en el formato correcto para la API
       const datosParaEnviar = {
         ...formData,
-        encargado: parseInt(formData.encargado), // Asegurar que sea un entero
+        encargado: parseInt(formData.encargado),
         cantidad_habitaciones: n,
         monto_total: parseFloat(formData.monto_total),
         senia: parseFloat(formData.senia),
@@ -361,14 +352,12 @@ const Reservas = () => {
       splitNombreApellido(reserva.nombre_completo);
 
     const encargadoId =
-      (reserva.encargado && reserva.encargado.id) ??
-      reserva.encargado_id ??
+      (reserva.encargado && reserva.encargado.id) ||
+      reserva.encargado_id ||
       (() => {
-        const username = reserva.encargado?.username ?? reserva.encargado_username ?? reserva.encargado;
-        const match = Array.isArray(usuarios)
-          ? usuarios.find((u) => u.username === username)
-          : undefined;
-        return match?.id ?? '';
+        const username = reserva.encargado?.username || reserva.encargado_username || reserva.encargado;
+        const match = Array.isArray(usuarios) ? usuarios.find((u) => u.username === username) : undefined;
+        return match?.id || '';
       })();
 
     const habitacionId =
@@ -709,20 +698,20 @@ const Reservas = () => {
                     setEditandoId(null);
                     setFormData({
                       encargado: '',
-                      nhabitacion: '',
                       origen: '',
                       nombre: '',
                       apellido: '',
                       telefono: '',
                       fecha_ingreso: '',
                       fecha_egreso: '',
-                      personas: 1,
                       cantidad_habitaciones: 1,
                       monto_total: '',
                       senia: '',
                       celiacos: false,
                       observaciones: ''
                     });
+                    setMultiPersonas([1]);
+                    setMultiHabitacionIds(['']);
                   }}
                   className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md"
                 >Cancelar</button>

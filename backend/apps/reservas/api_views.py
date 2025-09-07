@@ -613,7 +613,7 @@ class ReservaViewSet(viewsets.ModelViewSet):
         elements = []
 
         titulo = Paragraph(
-            "<para align='center'><b>Voucher de Reserva (Múltiple)</b></para>",
+            "<para align='center'><b>Voucher de Reserva</b></para>",
             styles["Title"],
         )
         subtitulo = Paragraph(
