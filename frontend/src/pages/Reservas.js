@@ -150,7 +150,15 @@ const Reservas = () => {
     const n = parseInt(formData.cantidad_habitaciones || 1);
     const camposObligatorios = [...camposObligatoriosBase, 'cantidad_habitaciones'];
     
-    const camposVacios = camposObligatorios.filter(campo => !formData[campo]);
+    const isEmptyValue = (val) => {
+      if (val === null || val === undefined) return true;
+      if (typeof val === 'string') return val.trim() === '';
+      return false; // permitir 0 en números
+    };
+    const camposVacios = camposObligatorios.filter(campo => isEmptyValue(formData[campo]));
+    // Validación extra: origen por select debe ser una de las opciones válidas
+    const origenValido = ['Celular', 'Booking', 'Sindicato', 'Agencia', 'Calle'];
+    if (!origenValido.includes(formData.origen)) camposVacios.push('origen');
     
     if (camposVacios.length > 0) {
       toast.error('Por favor complete todos los campos obligatorios');
@@ -319,6 +327,11 @@ const Reservas = () => {
     if (typeof value === 'string') {
       if (value.includes('T')) return value.split('T')[0];
       if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+      // Soporte para dd/mm/yyyy (posible en producción)
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+        const [dd, mm, yyyy] = value.split('/');
+        return `${yyyy}-${mm}-${dd}`;
+      }
     }
     try {
       const d = new Date(value);
