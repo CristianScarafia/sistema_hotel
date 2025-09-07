@@ -80,6 +80,7 @@ export const reservasService = {
     });
   },
   getVoucherUrl: (id) => `${getApiUrl()}/reservas/${id}/voucher/`,
+  getVoucherMultiUrl: (ids) => `${getApiUrl()}/reservas/voucher-multi/?ids=${ids.join(',')}`,
 };
 
 // Servicios de habitaciones

@@ -287,13 +287,13 @@ class HabitacionViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Mapeo simple personas -> tipo exacto
+            # Mapeo personas -> tipos permitidos (sugerir iguales o más grandes, nunca más chicas)
             if personas <= 2:
-                tipos_filtrados = ["doble"]
+                tipos_filtrados = ["doble", "triple", "cuadruple", "quintuple"]
             elif personas == 3:
-                tipos_filtrados = ["triple"]
+                tipos_filtrados = ["triple", "cuadruple", "quintuple"]
             elif personas == 4:
-                tipos_filtrados = ["cuadruple"]
+                tipos_filtrados = ["cuadruple", "quintuple"]
             else:
                 tipos_filtrados = ["quintuple"]
 
@@ -436,12 +436,27 @@ class ReservaViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            # Prorrateo de montos y seña
+            total_monto = self._parse_number(request.data.get("monto_total"))
+            total_senia = self._parse_number(request.data.get("senia"))
+            n_items = len(dedup_items)
+            base_monto = round((total_monto or 0.0) / n_items, 2)
+            base_senia = round((total_senia or 0.0) / n_items, 2)
+            # Ajustar residuo en el último elemento para cerrar sumas
+            montos = [base_monto] * n_items
+            senias = [base_senia] * n_items
+            if n_items > 0:
+                montos[-1] = round((total_monto or 0.0) - base_monto * (n_items - 1), 2)
+                senias[-1] = round((total_senia or 0.0) - base_senia * (n_items - 1), 2)
+
             with transaction.atomic():
-                for it in dedup_items:
+                for idx, it in enumerate(dedup_items):
                     payload = request.data.copy()
                     payload["habitacion_id"] = it["habitacion_id"]
                     payload["personas"] = it["personas"]
                     payload["cantidad_habitaciones"] = 1
+                    payload["monto_total"] = montos[idx]
+                    payload["senia"] = senias[idx]
                     if "habitaciones" in payload:
                         try:
                             del payload["habitaciones"]
@@ -501,13 +516,26 @@ class ReservaViewSet(viewsets.ModelViewSet):
 
             created_reservas = []
             errors = []
+            # Prorrateo de montos y seña
+            total_monto = self._parse_number(request.data.get("monto_total"))
+            total_senia = self._parse_number(request.data.get("senia"))
+            n_items = len(habitacion_ids)
+            base_monto = round((total_monto or 0.0) / n_items, 2)
+            base_senia = round((total_senia or 0.0) / n_items, 2)
+            montos = [base_monto] * n_items
+            senias = [base_senia] * n_items
+            if n_items > 0:
+                montos[-1] = round((total_monto or 0.0) - base_monto * (n_items - 1), 2)
+                senias[-1] = round((total_senia or 0.0) - base_senia * (n_items - 1), 2)
             with transaction.atomic():
-                for hid in habitacion_ids:
+                for idx, hid in enumerate(habitacion_ids):
                     # Construir payload individual por habitación
                     payload = request.data.copy()
                     payload["habitacion_id"] = hid
                     # Forzar cantidad_habitaciones=1 por registro para no sobredimensionar KPIs
                     payload["cantidad_habitaciones"] = 1
+                    payload["monto_total"] = montos[idx]
+                    payload["senia"] = senias[idx]
                     # Remover lista para el serializer individual
                     if "habitacion_ids" in payload:
                         try:
@@ -542,6 +570,181 @@ class ReservaViewSet(viewsets.ModelViewSet):
         return Response(
             output_serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
+
+    @action(detail=False, methods=["get"], url_path="voucher-multi")
+    def voucher_multi(self, request):
+        """Genera y devuelve un voucher PDF combinado para múltiples reservas.
+
+        Query param:
+        - ids: lista separada por comas de IDs de reservas
+        """
+        ids_str = request.query_params.get("ids")
+        if not ids_str:
+            return Response({"error": "Parámetro ids requerido"}, status=400)
+        try:
+            ids = [int(x) for x in ids_str.split(",") if x.strip()]
+        except ValueError:
+            return Response({"error": "Formato de ids inválido"}, status=400)
+
+        reservas = (
+            Reserva.objects.filter(id__in=ids)
+            .select_related("nhabitacion")
+            .order_by("fecha_ingreso", "id")
+        )
+        if not reservas:
+            raise Http404("Reservas no encontradas")
+
+        # Preparar respuesta PDF
+        response = HttpResponse(content_type="application/pdf")
+        filename = (
+            f"voucher_reserva_multi_{','.join([str(r.id) for r in reservas])}.pdf"
+        )
+        response["Content-Disposition"] = f'inline; filename="{filename}"'
+
+        doc = SimpleDocTemplate(
+            response,
+            pagesize=A4,
+            leftMargin=18 * mm,
+            rightMargin=18 * mm,
+            topMargin=18 * mm,
+            bottomMargin=18 * mm,
+        )
+        styles = getSampleStyleSheet()
+        elements = []
+
+        titulo = Paragraph(
+            "<para align='center'><b>Voucher de Reserva (Múltiple)</b></para>",
+            styles["Title"],
+        )
+        subtitulo = Paragraph(
+            f"<para align='center'>Reservas: {', '.join([str(r.id) for r in reservas])}</para>",
+            styles["Normal"],
+        )
+        elements.extend([titulo, Spacer(1, 6), subtitulo, Spacer(1, 12)])
+
+        # Datos generales (tomar del primero)
+        r0 = reservas[0]
+        huesped_data = [
+            ["Nombre", f"{r0.nombre} {r0.apellido}"],
+            ["Teléfono", r0.telefono],
+            ["Origen", r0.origen],
+            ["Encargado", r0.encargado],
+        ]
+
+        def build_table(title: str, data: list) -> Table:
+            header = Paragraph(f"<b>{title}</b>", styles["Heading3"])
+            elements.extend([header, Spacer(1, 6)])
+            table = Table(data, colWidths=[60 * mm, 100 * mm])
+            table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 10),
+                        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+                        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f9fafb")),
+                        (
+                            "ROWBACKGROUNDS",
+                            (0, 1),
+                            (-1, -1),
+                            [colors.HexColor("#ffffff"), colors.HexColor("#f3f4f6")],
+                        ),
+                        ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#e5e7eb")),
+                        (
+                            "INNERGRID",
+                            (0, 0),
+                            (-1, -1),
+                            0.5,
+                            colors.HexColor("#e5e7eb"),
+                        ),
+                    ]
+                )
+            )
+            return table
+
+        elements.append(build_table("Datos del huésped", huesped_data))
+        elements.append(Spacer(1, 10))
+
+        # Tabla por habitación
+        detalle_header = [
+            "Habitación",
+            "Tipo",
+            "Personas",
+            "Ingreso",
+            "Egreso",
+            "Monto",
+            "Seña",
+            "Resto",
+        ]
+        detalle_rows = [detalle_header]
+        total_monto = 0.0
+        total_senia = 0.0
+        total_resto = 0.0
+        for r in reservas:
+            total_monto += float(r.monto_total)
+            total_senia += float(r.senia)
+            total_resto += float(r.resto)
+            detalle_rows.append(
+                [
+                    r.nhabitacion.numero,
+                    r.nhabitacion.tipo,
+                    str(r.personas),
+                    r.fecha_ingreso.strftime("%d/%m/%Y"),
+                    r.fecha_egreso.strftime("%d/%m/%Y"),
+                    f"$ {float(r.monto_total):,.2f}".replace(",", "."),
+                    f"$ {float(r.senia):,.2f}".replace(",", "."),
+                    f"$ {float(r.resto):,.2f}".replace(",", "."),
+                ]
+            )
+
+        table = Table(
+            detalle_rows,
+            colWidths=[
+                22 * mm,
+                22 * mm,
+                18 * mm,
+                22 * mm,
+                22 * mm,
+                24 * mm,
+                24 * mm,
+                24 * mm,
+            ],
+        )
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eef2ff")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                    ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+                    (
+                        "ROWBACKGROUNDS",
+                        (0, 1),
+                        (-1, -1),
+                        [colors.white, colors.HexColor("#fafafa")],
+                    ),
+                    ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#e5e7eb")),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+                ]
+            )
+        )
+        elements.append(table)
+        elements.append(Spacer(1, 10))
+
+        # Totales
+        totales = [
+            ["Total Monto", f"$ {total_monto:,.2f}".replace(",", ".")],
+            ["Total Seña", f"$ {total_senia:,.2f}".replace(",", ".")],
+            ["Total Resto", f"$ {total_resto:,.2f}".replace(",", ".")],
+        ]
+        elements.append(build_table("Totales", totales))
+
+        doc.build(elements)
+        return response
 
     @action(detail=True, methods=["get"], url_path="voucher")
     def voucher(self, request, pk=None):

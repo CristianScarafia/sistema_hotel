@@ -229,13 +229,11 @@ const Reservas = () => {
         if (Array.isArray(data)) {
           toast.success(`Se crearon ${data.length} reservas exitosamente`);
           try {
-            data.slice(0, 5).forEach((res) => {
-              const idAbrir = res?.id;
-              if (idAbrir) {
-                const voucherUrl = reservasService.getVoucherUrl(idAbrir);
-                window.open(voucherUrl, '_blank', 'noopener');
-              }
-            });
+            const ids = data.map((r) => r.id).filter(Boolean);
+            if (ids.length) {
+              const url = reservasService.getVoucherMultiUrl(ids);
+              window.open(url, '_blank', 'noopener');
+            }
           } catch (e) {
             console.warn('No se pudo abrir el voucher automáticamente:', e);
           }
@@ -582,8 +580,14 @@ const Reservas = () => {
                   {Array.from({ length: parseInt(formData.cantidad_habitaciones || 1) }).map((_, idx) => {
                     const p = parseInt(multiPersonas[idx] || 1);
                     const selectedOthers = multiHabitacionIds.filter((val, j) => j !== idx);
-                    const mapa = p <= 2 ? ['doble'] : p === 3 ? ['triple'] : p === 4 ? ['cuadruple'] : ['quintuple'];
-                    const opciones = (habitacionesDisponiblesRango || []).filter((h) => mapa.includes(h.tipo) && !selectedOthers.includes(String(h.id)));
+                    // Sugerir iguales o más grandes (nunca más chicas)
+                    const opciones = (habitacionesDisponiblesRango || []).filter((h) => {
+                      if (selectedOthers.includes(String(h.id))) return false;
+                      if (p <= 2) return ['doble', 'triple', 'cuadruple', 'quintuple'].includes(h.tipo);
+                      if (p === 3) return ['triple', 'cuadruple', 'quintuple'].includes(h.tipo);
+                      if (p === 4) return ['cuadruple', 'quintuple'].includes(h.tipo);
+                      return ['quintuple'].includes(h.tipo);
+                    });
                     return (
                       <div key={idx} className="grid grid-cols-5 gap-2">
                         <div className="col-span-2">
