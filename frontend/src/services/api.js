@@ -128,3 +128,17 @@ export const authService = {
 };
 
 export default api;
+
+// Cliente para AI Gateway (MVP)
+export const aiService = {
+  query: async (question, context = {}) => {
+    const base = process.env.REACT_APP_AI_URL || 'http://localhost:8081';
+    const r = await fetch(`${base}/ai/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, context }),
+    });
+    if (!r.ok) throw new Error(`AI error ${r.status}`);
+    return r.json();
+  },
+};

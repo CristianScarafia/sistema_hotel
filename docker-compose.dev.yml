@@ -48,6 +48,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - REACT_APP_API_URL=http://localhost:8000/api
+      - REACT_APP_AI_URL=http://localhost:8081
       - WATCHPACK_POLLING=true
     depends_on:
       - web
@@ -56,9 +57,40 @@ services:
     stdin_open: true
     tty: true
 
+  # LLM local con Ollama (dev)
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - hotel_network
+
+  # AI Gateway (FastAPI) consumiendo el backend y Ollama (dev)
+  ai_gateway:
+    build:
+      context: ./ai-gateway
+      dockerfile: Dockerfile
+    environment:
+      - BACKEND_BASE_URL=http://web:8000/api
+      - OPENAPI_SCHEMA_URL=http://web:8000/api/schema/
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - MODEL_NAME=llama3.1:8b
+      - SERVICE_USERNAME=admin
+      - SERVICE_PASSWORD=admin123
+    ports:
+      - "8081:8081"
+    depends_on:
+      - web
+      - ollama
+    networks:
+      - hotel_network
+
 volumes:
   postgres_data:
   static_volume:
+  ollama_data:
 
 networks:
   hotel_network:

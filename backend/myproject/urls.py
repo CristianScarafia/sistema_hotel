@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import time
 import os
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 
 @csrf_exempt
@@ -58,6 +59,10 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("apps.reservas.urls")),
     path("api/", include("apps.reservas.api_urls")),
+    # OpenAPI schema y UIs
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     path("health/", health_check, name="health_check"),
     path("ping/", simple_health_check, name="simple_health_check"),
 ]

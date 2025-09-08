@@ -27,7 +27,10 @@ BASE_APPS = [
 
 LOCAL_APPS = ["apps.core", "apps.reservas"]
 
-THIRD_APPS = []
+THIRD_APPS = [
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
+]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
 
@@ -132,6 +135,15 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# drf-spectacular settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Hotel API",
+    "DESCRIPTION": "Esquema OpenAPI para el backend del hotel",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 # CORS Configuration

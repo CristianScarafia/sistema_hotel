@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { reservasService, usuariosService, habitacionesService } from '../services/api';
+import { reservasService, usuariosService, habitacionesService, aiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { FaEdit, FaTrash, FaEye, FaPrint } from 'react-icons/fa';
 import { toTitleCase } from '../utils/hotelUtils';
@@ -16,6 +16,9 @@ const Reservas = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [editandoId, setEditandoId] = useState(null); // Para controlar si estamos editando
   const [habitacionesDisponiblesRango, setHabitacionesDisponiblesRango] = useState([]);
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [aiAnswer, setAiAnswer] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const [multiPersonas, setMultiPersonas] = useState([1]);
   const [multiHabitacionIds, setMultiHabitacionIds] = useState(['']);
   const [formData, setFormData] = useState({
@@ -435,6 +438,41 @@ const Reservas = () => {
       <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
 
       <div className="space-y-6">
+        {/* Chat AI simple */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={aiQuestion}
+              onChange={(e) => setAiQuestion(e.target.value)}
+              placeholder="Pregúntale al asistente (disponibilidad, recomendaciones…)"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+              onClick={async () => {
+                setAiLoading(true);
+                setAiAnswer('');
+                try {
+                  const ctx = { fecha_ingreso: formData.fecha_ingreso, fecha_egreso: formData.fecha_egreso };
+                  const res = await aiService.query(aiQuestion || '¿Qué recomiendas reservar?', ctx);
+                  setAiAnswer(res?.answer || '');
+                } catch (e) {
+                  setAiAnswer('No pude procesar la consulta.');
+                } finally {
+                  setAiLoading(false);
+                }
+              }}
+              disabled={aiLoading}
+            >
+              {aiLoading ? 'Consultando…' : 'Preguntar'}
+            </button>
+          </div>
+          {aiAnswer && (
+            <div className="mt-3 text-sm text-gray-800 whitespace-pre-wrap">{aiAnswer}</div>
+          )}
+        </div>
         {/* Formulario de Nueva Reserva (arriba, ancho completo) */}
         <div ref={formContainerRef} className={`rounded-lg shadow p-6 ${editandoId ? 'bg-blue-50' : 'bg-white'}`}>
           <h2 className="text-xl font-semibold text-gray-900 mb-6 text-left">
