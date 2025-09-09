@@ -3,13 +3,13 @@ import { toast } from 'react-toastify';
 import { estadisticasService } from '../services/api';
 import { FaBed, FaUsers, FaCalendarCheck, FaCalendarTimes } from 'react-icons/fa';
 import { formatCurrency, formatDate, toTitleCase } from '../utils/hotelUtils';
-import { useAuth } from '../context/AuthContext';
+
 
 const Dashboard = () => {
   const [estadisticas, setEstadisticas] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+
 
   useEffect(() => {
     loadDashboardData();
@@ -103,22 +103,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Ingresos Totales - solo supervisores */}
-      {estadisticas && user?.perfil?.rol === 'supervisor' && (
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">Ingresos Totales</h3>
-              <p className="text-sm text-gray-600">Total acumulado de todas las reservas</p>
-            </div>
-            <div className="flex items-center">
-              <span className="text-3xl font-bold text-green-600">
-                {formatCurrency(estadisticas.ingresos_totales)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* Últimas Reservas */}
       {dashboard && (
